@@ -57,6 +57,24 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Question"
+  /questions/parse-pdf:
+    post:
+      operationId: parsePdfQuestions
+      tags: [questions]
+      summary: Parse multiple questions from an uploaded PDF using AI
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ParsePdfBody"
+      responses:
+        "200":
+          description: Parsed questions from PDF
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ParsePdfResult"
   /questions/parse-image:
     post:
       operationId: parseQuestionImage
@@ -282,6 +300,26 @@ components:
       required:
         - questionText
         - choices
+    ParsePdfBody:
+      type: object
+      properties:
+        pdfBase64:
+          type: string
+          description: Base64 encoded PDF data
+      required:
+        - pdfBase64
+    ParsePdfResult:
+      type: object
+      properties:
+        questions:
+          type: array
+          items:
+            $ref: "#/components/schemas/Question"
+        totalParsed:
+          type: integer
+      required:
+        - questions
+        - totalParsed
     ParseImageBody:
       type: object
       properties:

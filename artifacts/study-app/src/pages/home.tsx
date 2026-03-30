@@ -4,6 +4,7 @@ import {
   useListQuestions, 
   useGetQuestionStats, 
   useParseQuestionImage,
+  useParsePdfQuestions,
   useCreateQuestion,
   getListQuestionsQueryKey,
   getGetQuestionStatsQueryKey
@@ -11,7 +12,7 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Upload, BookOpen, BrainCircuit, Loader2, ArrowRight, Target, ListChecks, Sparkles, Plus, X } from "lucide-react";
+import { Upload, BookOpen, BrainCircuit, Loader2, ArrowRight, Target, ListChecks, Sparkles, Plus, X, FileText, CheckCircle2 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
@@ -40,6 +41,8 @@ export default function Home() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const pdfInputRef = useRef<HTMLInputElement>(null);
+  const [pdfProgress, setPdfProgress] = useState<{ status: "idle" | "reading" | "parsing" | "done" | "error"; totalParsed?: number; fileName?: string }>({ status: "idle" });
 
   const { data: stats, isLoading: isLoadingStats } = useGetQuestionStats();
   const { data: questions, isLoading: isLoadingQuestions } = useListQuestions();
@@ -63,6 +66,28 @@ export default function Home() {
         });
       }
     }
+  });
+
+  const parsePdfMutation = useParsePdfQuestions({
+    mutation: {
+      onSuccess: (data) => {
+        setPdfProgress({ status: "done", totalParsed: data.totalParsed, fileName: pdfProgress.fileName });
+        queryClient.invalidateQueries({ queryKey: getListQuestionsQueryKey() });
+        queryClient.invalidateQueries({ queryKey: getGetQuestionStatsQueryKey() });
+        toast({
+          title: `${data.totalParsed} questions imported!`,
+          description: "All questions from the PDF have been added to your study deck.",
+        });
+      },
+      onError: () => {
+        setPdfProgress({ status: "error" });
+        toast({
+          title: "Failed to parse PDF",
+          description: "Please ensure the PDF contains multiple-choice questions with an answer key.",
+          variant: "destructive",
+        });
+      },
+    },
   });
 
   const createQuestionMutation = useCreateQuestion({
@@ -118,6 +143,29 @@ export default function Home() {
     fileInputRef.current?.click();
   };
 
+  const handlePdfUpload = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setPdfProgress({ status: "reading", fileName: file.name });
+    try {
+      const base64 = await fileToBase64(file);
+      setPdfProgress({ status: "parsing", fileName: file.name });
+      parsePdfMutation.mutate({ data: { pdfBase64: base64 } });
+    } catch {
+      setPdfProgress({ status: "error" });
+      toast({ title: "Error reading PDF file", variant: "destructive" });
+    } finally {
+      if (pdfInputRef.current) {
+        pdfInputRef.current.value = "";
+      }
+    }
+  };
+
+  const pdfUploadClick = () => {
+    pdfInputRef.current?.click();
+  };
+
   const handleManualSubmit = () => {
     if (!manualQuestionText.trim() || manualChoices.some(c => !c.text.trim()) || !manualChoices.some(c => c.isCorrect)) {
       toast({ title: "Please fill out all fields and select a correct answer.", variant: "destructive" });
@@ -151,6 +199,13 @@ export default function Home() {
               ref={fileInputRef} 
               onChange={handleFileUpload} 
             />
+            <input 
+              type="file" 
+              accept=".pdf,application/pdf" 
+              className="hidden" 
+              ref={pdfInputRef} 
+              onChange={handlePdfUpload} 
+            />
             <Button 
               size="lg" 
               className="bg-secondary text-secondary-foreground hover:bg-secondary/90 shadow-xl w-full md:w-auto text-lg h-14 px-8 rounded-xl transition-transform active:scale-95"
@@ -163,6 +218,20 @@ export default function Home() {
                 <Upload className="w-6 h-6 mr-3" />
               )}
               {parseImageMutation.isPending ? "Extracting..." : "Upload Snapshot"}
+            </Button>
+
+            <Button 
+              size="lg" 
+              className="bg-secondary/80 text-secondary-foreground hover:bg-secondary/70 shadow-xl w-full md:w-auto text-lg h-14 px-8 rounded-xl transition-transform active:scale-95"
+              onClick={pdfUploadClick}
+              disabled={parsePdfMutation.isPending}
+            >
+              {parsePdfMutation.isPending ? (
+                <Loader2 className="w-6 h-6 mr-3 animate-spin" />
+              ) : (
+                <FileText className="w-6 h-6 mr-3" />
+              )}
+              {parsePdfMutation.isPending ? "Parsing PDF..." : "Upload PDF"}
             </Button>
 
             <Dialog open={isManualDialogOpen} onOpenChange={setIsManualDialogOpen}>
@@ -282,6 +351,43 @@ export default function Home() {
             </CardContent>
           </Card>
         </div>
+
+        {/* PDF Import Progress */}
+        {pdfProgress.status !== "idle" && pdfProgress.status !== "error" && (
+          <Card className="shadow-lg border-0 bg-card rounded-xl mb-8 overflow-hidden">
+            <div className={`h-1 ${pdfProgress.status === "done" ? "bg-green-500" : "bg-primary animate-pulse"}`} />
+            <CardContent className="p-6 flex items-center gap-4">
+              {pdfProgress.status === "done" ? (
+                <>
+                  <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                    <CheckCircle2 className="w-6 h-6 text-green-600" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-semibold text-foreground text-lg">Import Complete!</p>
+                    <p className="text-muted-foreground">{pdfProgress.totalParsed} questions imported from {pdfProgress.fileName}</p>
+                  </div>
+                  <Button variant="ghost" size="sm" onClick={() => setPdfProgress({ status: "idle" })}>
+                    <X className="w-4 h-4" />
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <Loader2 className="w-6 h-6 text-primary animate-spin" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-semibold text-foreground text-lg">
+                      {pdfProgress.status === "reading" ? "Reading PDF..." : "AI is parsing questions..."}
+                    </p>
+                    <p className="text-muted-foreground">
+                      {pdfProgress.status === "reading" ? "Extracting text from document" : "This may take a minute for large documents"}
+                    </p>
+                  </div>
+                </>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Questions List */}
         <div>

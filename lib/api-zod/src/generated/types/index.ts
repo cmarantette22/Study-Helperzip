@@ -21,5 +21,7 @@ export * from "./explainResult";
 export * from "./explainResultExplanationsItem";
 export * from "./healthStatus";
 export * from "./parseImageBody";
+export * from "./parsePdfBody";
+export * from "./parsePdfResult";
 export * from "./question";
 export * from "./questionStats";

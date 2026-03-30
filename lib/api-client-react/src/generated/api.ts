@@ -26,6 +26,8 @@ import type {
   ExplainResult,
   HealthStatus,
   ParseImageBody,
+  ParsePdfBody,
+  ParsePdfResult,
   Question,
   QuestionStats,
 } from "./api.schemas";
@@ -274,6 +276,92 @@ export const useCreateQuestion = <
   TContext
 > => {
   return useMutation(getCreateQuestionMutationOptions(options));
+};
+
+/**
+ * @summary Parse multiple questions from an uploaded PDF using AI
+ */
+export const getParsePdfQuestionsUrl = () => {
+  return `/api/questions/parse-pdf`;
+};
+
+export const parsePdfQuestions = async (
+  parsePdfBody: ParsePdfBody,
+  options?: RequestInit,
+): Promise<ParsePdfResult> => {
+  return customFetch<ParsePdfResult>(getParsePdfQuestionsUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(parsePdfBody),
+  });
+};
+
+export const getParsePdfQuestionsMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof parsePdfQuestions>>,
+    TError,
+    { data: BodyType<ParsePdfBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof parsePdfQuestions>>,
+  TError,
+  { data: BodyType<ParsePdfBody> },
+  TContext
+> => {
+  const mutationKey = ["parsePdfQuestions"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof parsePdfQuestions>>,
+    { data: BodyType<ParsePdfBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return parsePdfQuestions(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ParsePdfQuestionsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof parsePdfQuestions>>
+>;
+export type ParsePdfQuestionsMutationBody = BodyType<ParsePdfBody>;
+export type ParsePdfQuestionsMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Parse multiple questions from an uploaded PDF using AI
+ */
+export const useParsePdfQuestions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof parsePdfQuestions>>,
+    TError,
+    { data: BodyType<ParsePdfBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof parsePdfQuestions>>,
+  TError,
+  { data: BodyType<ParsePdfBody> },
+  TContext
+> => {
+  return useMutation(getParsePdfQuestionsMutationOptions(options));
 };
 
 /**

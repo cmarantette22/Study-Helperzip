@@ -45,6 +45,7 @@ artifacts-monorepo/
 A study app for multiple-choice questions with AI-powered features:
 
 - **Upload images**: Take a screenshot of a multiple-choice question, upload it, and AI (GPT-5.2 with vision) parses the question text and answer choices
+- **Upload PDFs**: Upload a PDF document with multiple-choice questions and an answer key; AI extracts all questions and marks correct answers automatically (uses `unpdf` for text extraction)
 - **Quiz mode**: Answer questions and get instant correct/incorrect feedback
 - **AI explanations**: Request AI to explain why each answer choice is correct or incorrect
 - **Study stats**: Track total questions, accuracy percentage, and questions needing review
@@ -59,6 +60,7 @@ A study app for multiple-choice questions with AI-powered features:
 - `GET /questions` — list all questions with choices
 - `POST /questions` — create a question manually
 - `POST /questions/parse-image` — upload base64 image, AI parses it into a question
+- `POST /questions/parse-pdf` — upload base64 PDF, AI extracts all questions with answer key matching
 - `GET /questions/:id` — get a single question
 - `DELETE /questions/:id` — delete a question
 - `POST /questions/:id/check` — check if selected answer is correct

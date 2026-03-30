@@ -37,6 +37,16 @@ export interface CreateQuestionBody {
   choices: CreateQuestionBodyChoicesItem[];
 }
 
+export interface ParsePdfBody {
+  /** Base64 encoded PDF data */
+  pdfBase64: string;
+}
+
+export interface ParsePdfResult {
+  questions: Question[];
+  totalParsed: number;
+}
+
 export interface ParseImageBody {
   /** Base64 encoded image data */
   imageBase64: string;

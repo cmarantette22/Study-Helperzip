@@ -51,6 +51,35 @@ export const CreateQuestionBody = zod.object({
 });
 
 /**
+ * @summary Parse multiple questions from an uploaded PDF using AI
+ */
+export const ParsePdfQuestionsBody = zod.object({
+  pdfBase64: zod.string().describe("Base64 encoded PDF data"),
+});
+
+export const ParsePdfQuestionsResponse = zod.object({
+  questions: zod.array(
+    zod.object({
+      id: zod.number(),
+      questionText: zod.string(),
+      choices: zod.array(
+        zod.object({
+          id: zod.number(),
+          questionId: zod.number(),
+          label: zod.string(),
+          text: zod.string(),
+          isCorrect: zod.boolean(),
+        }),
+      ),
+      answered: zod.boolean(),
+      answeredCorrectly: zod.boolean().nullish(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+  totalParsed: zod.number(),
+});
+
+/**
  * @summary Parse a question from an uploaded image using AI
  */
 export const ParseQuestionImageBody = zod.object({

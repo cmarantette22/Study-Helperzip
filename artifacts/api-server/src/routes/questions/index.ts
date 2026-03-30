@@ -6,9 +6,11 @@ import { openai } from "@workspace/integrations-openai-ai-server";
 import {
   CreateQuestionBody,
   ParseQuestionImageBody,
+  ParsePdfQuestionsBody,
   CheckAnswerBody,
   ChatAboutQuestionBody,
 } from "@workspace/api-zod";
+import { extractText } from "unpdf";
 
 const router: IRouter = Router();
 
@@ -133,6 +135,110 @@ Important: Return ONLY the JSON, no markdown code fences or other text.`,
     .returning();
 
   res.json({ ...question, choices: insertedChoices });
+});
+
+router.post("/questions/parse-pdf", async (req, res) => {
+  const body = ParsePdfQuestionsBody.parse(req.body);
+
+  const pdfBuffer = Buffer.from(body.pdfBase64, "base64");
+  const pdfUint8 = new Uint8Array(pdfBuffer);
+  let pdfText: string;
+  try {
+    const result = await extractText(pdfUint8, { mergePages: true });
+    pdfText = typeof result.text === "string" ? result.text : result.text.join("\n");
+  } catch (err: any) {
+    console.error("PDF parse error:", err?.message || err);
+    res.status(400).json({ error: "Failed to parse PDF file" });
+    return;
+  }
+
+  const response = await openai.chat.completions.create({
+    model: "gpt-5.2",
+    max_completion_tokens: 16384,
+    messages: [
+      {
+        role: "system",
+        content: `You are a question parser. Given the text content of a PDF containing multiple-choice questions and an answer key, extract ALL questions with their answer choices and mark the correct answers based on the answer key.
+
+The PDF typically has:
+- Numbered questions with multiple choices (A, B, C, D)
+- An answer key section (usually on the last page) that maps question numbers to correct answer letters
+
+Your job:
+1. Parse every question from the document
+2. Extract the full question text (including any context, tables, or scenarios described)
+3. Extract all answer choices with their labels
+4. Use the answer key to determine which choice is correct for each question
+
+Return your response as valid JSON with this exact format:
+{
+  "questions": [
+    {
+      "questionNumber": 1,
+      "questionText": "Full question text here",
+      "choices": [
+        { "label": "A", "text": "Choice A text", "isCorrect": true },
+        { "label": "B", "text": "Choice B text", "isCorrect": false },
+        { "label": "C", "text": "Choice C text", "isCorrect": false },
+        { "label": "D", "text": "Choice D text", "isCorrect": false }
+      ]
+    }
+  ]
+}
+
+Important rules:
+- Return ONLY the JSON, no markdown code fences or other text
+- Include ALL questions from the document, do not skip any
+- If a question references a table or data, include that context in the questionText
+- Use the answer key to correctly mark isCorrect for each choice
+- Preserve the full text of each choice, including any explanations within the choice`,
+      },
+      {
+        role: "user",
+        content: `Here is the text content of the PDF:\n\n${pdfText}`,
+      },
+    ],
+  });
+
+  const content = response.choices[0]?.message?.content;
+  if (!content) {
+    res.status(500).json({ error: "Failed to parse PDF questions" });
+    return;
+  }
+
+  let parsed: { questions: { questionNumber: number; questionText: string; choices: { label: string; text: string; isCorrect: boolean }[] }[] };
+  try {
+    const cleaned = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+    parsed = JSON.parse(cleaned);
+  } catch {
+    res.status(500).json({ error: "Failed to parse AI response" });
+    return;
+  }
+
+  const savedQuestions = [];
+
+  for (const q of parsed.questions) {
+    const [question] = await db
+      .insert(questionsTable)
+      .values({ questionText: q.questionText })
+      .returning();
+
+    const choiceValues = q.choices.map((c) => ({
+      questionId: question.id,
+      label: c.label,
+      text: c.text,
+      isCorrect: c.isCorrect,
+    }));
+
+    const insertedChoices = await db
+      .insert(choicesTable)
+      .values(choiceValues)
+      .returning();
+
+    savedQuestions.push({ ...question, choices: insertedChoices });
+  }
+
+  res.json({ questions: savedQuestions, totalParsed: savedQuestions.length });
 });
 
 router.get("/questions/stats", async (_req, res) => {
