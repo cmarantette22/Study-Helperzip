@@ -14,6 +14,8 @@ tags:
     description: Project management
   - name: questions
     description: Question management
+  - name: outline
+    description: Outline section management
 paths:
   /healthz:
     get:
@@ -169,6 +171,141 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ResetResult"
+  /projects/{id}/outline:
+    get:
+      operationId: listOutlineSections
+      tags: [outline]
+      summary: List outline sections for a project
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of outline sections
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/OutlineSection"
+    post:
+      operationId: uploadOutline
+      tags: [outline]
+      summary: Upload and parse a course outline into sections
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UploadOutlineBody"
+      responses:
+        "200":
+          description: Parsed outline sections
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/OutlineSection"
+    delete:
+      operationId: deleteAllOutlineSections
+      tags: [outline]
+      summary: Delete all outline sections for a project
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: All sections deleted
+  /projects/{id}/outline/{sectionId}:
+    delete:
+      operationId: deleteOutlineSection
+      tags: [outline]
+      summary: Delete a single outline section
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: sectionId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Section deleted
+        "404":
+          description: Not found
+  /projects/{id}/outline/{sectionId}/deep-explain:
+    post:
+      operationId: deepExplainSection
+      tags: [outline]
+      summary: Get in-depth explanation of the principles in an outline section
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: sectionId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deep explanation of the section
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeepExplainResult"
+        "404":
+          description: Not found
+  /projects/{id}/outline/{sectionId}/chat:
+    post:
+      operationId: chatAboutSection
+      tags: [outline]
+      summary: Follow-up conversation about an outline section
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: sectionId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChatMessageBody"
+      responses:
+        "200":
+          description: AI response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChatResponse"
+        "404":
+          description: Not found
   /questions:
     get:
       operationId: listQuestions
@@ -636,6 +773,39 @@ components:
           type: string
       required:
         - reply
+    OutlineSection:
+      type: object
+      properties:
+        id:
+          type: integer
+        projectId:
+          type: integer
+        title:
+          type: string
+        content:
+          type: string
+        orderIndex:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - projectId
+        - title
+        - content
+        - orderIndex
+        - createdAt
+    UploadOutlineBody:
+      type: object
+      properties:
+        text:
+          type: string
+          description: Plain text of the course outline
+        pdfBase64:
+          type: string
+          description: Base64 encoded PDF of the course outline
+      description: Provide either text or pdfBase64
     QuestionStats:
       type: object
       properties:

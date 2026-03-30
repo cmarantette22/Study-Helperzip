@@ -122,6 +122,110 @@ export const ResetProjectAnswersResponse = zod.object({
 });
 
 /**
+ * @summary List outline sections for a project
+ */
+export const ListOutlineSectionsParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const ListOutlineSectionsResponseItem = zod.object({
+  id: zod.number(),
+  projectId: zod.number(),
+  title: zod.string(),
+  content: zod.string(),
+  orderIndex: zod.number(),
+  createdAt: zod.coerce.date(),
+});
+export const ListOutlineSectionsResponse = zod.array(
+  ListOutlineSectionsResponseItem,
+);
+
+/**
+ * @summary Upload and parse a course outline into sections
+ */
+export const UploadOutlineParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const UploadOutlineBody = zod
+  .object({
+    text: zod.string().optional().describe("Plain text of the course outline"),
+    pdfBase64: zod
+      .string()
+      .optional()
+      .describe("Base64 encoded PDF of the course outline"),
+  })
+  .describe("Provide either text or pdfBase64");
+
+export const UploadOutlineResponseItem = zod.object({
+  id: zod.number(),
+  projectId: zod.number(),
+  title: zod.string(),
+  content: zod.string(),
+  orderIndex: zod.number(),
+  createdAt: zod.coerce.date(),
+});
+export const UploadOutlineResponse = zod.array(UploadOutlineResponseItem);
+
+/**
+ * @summary Delete all outline sections for a project
+ */
+export const DeleteAllOutlineSectionsParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+/**
+ * @summary Delete a single outline section
+ */
+export const DeleteOutlineSectionParams = zod.object({
+  id: zod.coerce.number(),
+  sectionId: zod.coerce.number(),
+});
+
+/**
+ * @summary Get in-depth explanation of the principles in an outline section
+ */
+export const DeepExplainSectionParams = zod.object({
+  id: zod.coerce.number(),
+  sectionId: zod.coerce.number(),
+});
+
+export const DeepExplainSectionResponse = zod.object({
+  principles: zod.array(
+    zod.object({
+      name: zod.string(),
+      description: zod.string(),
+      howItApplies: zod.string(),
+    }),
+  ),
+  summary: zod.string(),
+});
+
+/**
+ * @summary Follow-up conversation about an outline section
+ */
+export const ChatAboutSectionParams = zod.object({
+  id: zod.coerce.number(),
+  sectionId: zod.coerce.number(),
+});
+
+export const ChatAboutSectionBody = zod.object({
+  message: zod.string(),
+  conversationHistory: zod
+    .array(
+      zod.object({
+        role: zod.enum(["user", "assistant"]),
+        content: zod.string(),
+      }),
+    )
+    .optional(),
+});
+
+export const ChatAboutSectionResponse = zod.object({
+  reply: zod.string(),
+});
+
+/**
  * @summary List all questions
  */
 export const ListQuestionsResponseItem = zod.object({

@@ -135,6 +135,25 @@ export interface ChatResponse {
   reply: string;
 }
 
+export interface OutlineSection {
+  id: number;
+  projectId: number;
+  title: string;
+  content: string;
+  orderIndex: number;
+  createdAt: string;
+}
+
+/**
+ * Provide either text or pdfBase64
+ */
+export interface UploadOutlineBody {
+  /** Plain text of the course outline */
+  text?: string;
+  /** Base64 encoded PDF of the course outline */
+  pdfBase64?: string;
+}
+
 export interface QuestionStats {
   totalQuestions: number;
   answeredQuestions: number;

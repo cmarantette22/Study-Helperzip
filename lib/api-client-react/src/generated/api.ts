@@ -28,6 +28,7 @@ import type {
   GetQuestionStatsParams,
   HealthStatus,
   ListProjectQuestionsParams,
+  OutlineSection,
   ParseImageBody,
   ParsePdfBody,
   ParsePdfResult,
@@ -37,6 +38,7 @@ import type {
   QuestionStats,
   ResetProjectAnswersParams,
   ResetResult,
+  UploadOutlineBody,
 } from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
@@ -754,6 +756,525 @@ export const useResetProjectAnswers = <
   TContext
 > => {
   return useMutation(getResetProjectAnswersMutationOptions(options));
+};
+
+/**
+ * @summary List outline sections for a project
+ */
+export const getListOutlineSectionsUrl = (id: number) => {
+  return `/api/projects/${id}/outline`;
+};
+
+export const listOutlineSections = async (
+  id: number,
+  options?: RequestInit,
+): Promise<OutlineSection[]> => {
+  return customFetch<OutlineSection[]>(getListOutlineSectionsUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListOutlineSectionsQueryKey = (id: number) => {
+  return [`/api/projects/${id}/outline`] as const;
+};
+
+export const getListOutlineSectionsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listOutlineSections>>,
+  TError = ErrorType<unknown>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listOutlineSections>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListOutlineSectionsQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listOutlineSections>>
+  > = ({ signal }) => listOutlineSections(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof listOutlineSections>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListOutlineSectionsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listOutlineSections>>
+>;
+export type ListOutlineSectionsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List outline sections for a project
+ */
+
+export function useListOutlineSections<
+  TData = Awaited<ReturnType<typeof listOutlineSections>>,
+  TError = ErrorType<unknown>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listOutlineSections>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListOutlineSectionsQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Upload and parse a course outline into sections
+ */
+export const getUploadOutlineUrl = (id: number) => {
+  return `/api/projects/${id}/outline`;
+};
+
+export const uploadOutline = async (
+  id: number,
+  uploadOutlineBody: UploadOutlineBody,
+  options?: RequestInit,
+): Promise<OutlineSection[]> => {
+  return customFetch<OutlineSection[]>(getUploadOutlineUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(uploadOutlineBody),
+  });
+};
+
+export const getUploadOutlineMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof uploadOutline>>,
+    TError,
+    { id: number; data: BodyType<UploadOutlineBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof uploadOutline>>,
+  TError,
+  { id: number; data: BodyType<UploadOutlineBody> },
+  TContext
+> => {
+  const mutationKey = ["uploadOutline"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof uploadOutline>>,
+    { id: number; data: BodyType<UploadOutlineBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return uploadOutline(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UploadOutlineMutationResult = NonNullable<
+  Awaited<ReturnType<typeof uploadOutline>>
+>;
+export type UploadOutlineMutationBody = BodyType<UploadOutlineBody>;
+export type UploadOutlineMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Upload and parse a course outline into sections
+ */
+export const useUploadOutline = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof uploadOutline>>,
+    TError,
+    { id: number; data: BodyType<UploadOutlineBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof uploadOutline>>,
+  TError,
+  { id: number; data: BodyType<UploadOutlineBody> },
+  TContext
+> => {
+  return useMutation(getUploadOutlineMutationOptions(options));
+};
+
+/**
+ * @summary Delete all outline sections for a project
+ */
+export const getDeleteAllOutlineSectionsUrl = (id: number) => {
+  return `/api/projects/${id}/outline`;
+};
+
+export const deleteAllOutlineSections = async (
+  id: number,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getDeleteAllOutlineSectionsUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteAllOutlineSectionsMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteAllOutlineSections>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteAllOutlineSections>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["deleteAllOutlineSections"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteAllOutlineSections>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return deleteAllOutlineSections(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteAllOutlineSectionsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteAllOutlineSections>>
+>;
+
+export type DeleteAllOutlineSectionsMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Delete all outline sections for a project
+ */
+export const useDeleteAllOutlineSections = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteAllOutlineSections>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteAllOutlineSections>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getDeleteAllOutlineSectionsMutationOptions(options));
+};
+
+/**
+ * @summary Delete a single outline section
+ */
+export const getDeleteOutlineSectionUrl = (id: number, sectionId: number) => {
+  return `/api/projects/${id}/outline/${sectionId}`;
+};
+
+export const deleteOutlineSection = async (
+  id: number,
+  sectionId: number,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getDeleteOutlineSectionUrl(id, sectionId), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteOutlineSectionMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteOutlineSection>>,
+    TError,
+    { id: number; sectionId: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteOutlineSection>>,
+  TError,
+  { id: number; sectionId: number },
+  TContext
+> => {
+  const mutationKey = ["deleteOutlineSection"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteOutlineSection>>,
+    { id: number; sectionId: number }
+  > = (props) => {
+    const { id, sectionId } = props ?? {};
+
+    return deleteOutlineSection(id, sectionId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteOutlineSectionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteOutlineSection>>
+>;
+
+export type DeleteOutlineSectionMutationError = ErrorType<void>;
+
+/**
+ * @summary Delete a single outline section
+ */
+export const useDeleteOutlineSection = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteOutlineSection>>,
+    TError,
+    { id: number; sectionId: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteOutlineSection>>,
+  TError,
+  { id: number; sectionId: number },
+  TContext
+> => {
+  return useMutation(getDeleteOutlineSectionMutationOptions(options));
+};
+
+/**
+ * @summary Get in-depth explanation of the principles in an outline section
+ */
+export const getDeepExplainSectionUrl = (id: number, sectionId: number) => {
+  return `/api/projects/${id}/outline/${sectionId}/deep-explain`;
+};
+
+export const deepExplainSection = async (
+  id: number,
+  sectionId: number,
+  options?: RequestInit,
+): Promise<DeepExplainResult> => {
+  return customFetch<DeepExplainResult>(
+    getDeepExplainSectionUrl(id, sectionId),
+    {
+      ...options,
+      method: "POST",
+    },
+  );
+};
+
+export const getDeepExplainSectionMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deepExplainSection>>,
+    TError,
+    { id: number; sectionId: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deepExplainSection>>,
+  TError,
+  { id: number; sectionId: number },
+  TContext
+> => {
+  const mutationKey = ["deepExplainSection"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deepExplainSection>>,
+    { id: number; sectionId: number }
+  > = (props) => {
+    const { id, sectionId } = props ?? {};
+
+    return deepExplainSection(id, sectionId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeepExplainSectionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deepExplainSection>>
+>;
+
+export type DeepExplainSectionMutationError = ErrorType<void>;
+
+/**
+ * @summary Get in-depth explanation of the principles in an outline section
+ */
+export const useDeepExplainSection = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deepExplainSection>>,
+    TError,
+    { id: number; sectionId: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deepExplainSection>>,
+  TError,
+  { id: number; sectionId: number },
+  TContext
+> => {
+  return useMutation(getDeepExplainSectionMutationOptions(options));
+};
+
+/**
+ * @summary Follow-up conversation about an outline section
+ */
+export const getChatAboutSectionUrl = (id: number, sectionId: number) => {
+  return `/api/projects/${id}/outline/${sectionId}/chat`;
+};
+
+export const chatAboutSection = async (
+  id: number,
+  sectionId: number,
+  chatMessageBody: ChatMessageBody,
+  options?: RequestInit,
+): Promise<ChatResponse> => {
+  return customFetch<ChatResponse>(getChatAboutSectionUrl(id, sectionId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(chatMessageBody),
+  });
+};
+
+export const getChatAboutSectionMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof chatAboutSection>>,
+    TError,
+    { id: number; sectionId: number; data: BodyType<ChatMessageBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof chatAboutSection>>,
+  TError,
+  { id: number; sectionId: number; data: BodyType<ChatMessageBody> },
+  TContext
+> => {
+  const mutationKey = ["chatAboutSection"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof chatAboutSection>>,
+    { id: number; sectionId: number; data: BodyType<ChatMessageBody> }
+  > = (props) => {
+    const { id, sectionId, data } = props ?? {};
+
+    return chatAboutSection(id, sectionId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ChatAboutSectionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof chatAboutSection>>
+>;
+export type ChatAboutSectionMutationBody = BodyType<ChatMessageBody>;
+export type ChatAboutSectionMutationError = ErrorType<void>;
+
+/**
+ * @summary Follow-up conversation about an outline section
+ */
+export const useChatAboutSection = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof chatAboutSection>>,
+    TError,
+    { id: number; sectionId: number; data: BodyType<ChatMessageBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof chatAboutSection>>,
+  TError,
+  { id: number; sectionId: number; data: BodyType<ChatMessageBody> },
+  TContext
+> => {
+  return useMutation(getChatAboutSectionMutationOptions(options));
 };
 
 /**
