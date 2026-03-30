@@ -140,9 +140,10 @@ export default function ProjectDetail() {
         queryClient.invalidateQueries({ queryKey: getListOutlineSectionsQueryKey(projectId) });
         toast({ title: `${data.length} sections parsed from outline!` });
       },
-      onError: () => {
+      onError: (err: any) => {
         setOutlineUploadProgress("idle");
-        toast({ title: "Failed to parse outline", variant: "destructive" });
+        const msg = err?.response?.data?.error || err?.message || "Failed to parse outline";
+        toast({ title: msg, variant: "destructive" });
       },
     },
   });

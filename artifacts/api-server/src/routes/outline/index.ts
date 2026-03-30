@@ -22,36 +22,43 @@ router.get("/projects/:id/outline", async (req, res) => {
 });
 
 router.post("/projects/:id/outline", async (req, res) => {
-  const projectId = parseInt(req.params.id, 10);
-  const body = UploadOutlineBody.parse(req.body);
+  try {
+    const projectId = parseInt(req.params.id, 10);
+    const body = UploadOutlineBody.parse(req.body);
 
-  let outlineText = body.text ?? "";
+    let outlineText = body.text ?? "";
 
-  if (body.pdfBase64 && !outlineText) {
-    const pdfBuffer = Buffer.from(body.pdfBase64, "base64");
-    const { text: extracted } = await extractText(new Uint8Array(pdfBuffer));
-    outlineText = extracted;
-  }
+    if (body.pdfBase64 && !outlineText) {
+      try {
+        const pdfBuffer = Buffer.from(body.pdfBase64, "base64");
+        const result = await extractText(new Uint8Array(pdfBuffer));
+        outlineText = typeof result.text === "string" ? result.text : String(result.text ?? "");
+      } catch (pdfErr) {
+        console.error("PDF extraction error:", pdfErr);
+        res.status(400).json({ error: "Failed to extract text from PDF. The file may be corrupted or contain only images." });
+        return;
+      }
+    }
 
-  if (!outlineText.trim()) {
-    res.status(400).json({ error: "No outline text provided" });
-    return;
-  }
+    if (!outlineText.trim()) {
+      res.status(400).json({ error: "No outline text provided" });
+      return;
+    }
 
-  const response = await openai.chat.completions.create({
-    model: "gpt-5.2",
-    max_completion_tokens: 8192,
-    messages: [
-      {
-        role: "system",
-        content: `You are a course outline parser. Given a course outline or syllabus text, break it down into distinct sections/topics. Each section should represent a meaningful unit of study (e.g., a chapter, module, topic, or lecture).
+    const response = await openai.chat.completions.create({
+      model: "gpt-5.2",
+      max_completion_tokens: 16384,
+      messages: [
+        {
+          role: "system",
+          content: `You are a course outline parser. Given a course outline or syllabus text, break it down into distinct sections/topics. Each section should represent a meaningful unit of study (e.g., a chapter, module, topic, or lecture).
 
 Return your response as valid JSON with this exact format:
 {
   "sections": [
     {
       "title": "Section title or topic name",
-      "content": "The full content/description of what this section covers, including subtopics, key terms, learning objectives, and any details from the outline"
+      "content": "The full content/description of what this section covers, including subtopics, key terms, learning objectives, formulas, and any details from the outline"
     }
   ]
 }
@@ -61,49 +68,60 @@ Guidelines:
 - Keep the original structure and hierarchy
 - Include subtopics within their parent section's content
 - If a section has bullet points or sub-items, include them in the content
-- Preserve any specific terms, concepts, or vocabulary mentioned
+- Preserve any specific terms, concepts, vocabulary, and formulas mentioned
+- For math formulas, write them in a readable text format
 - Return ONLY the JSON, no markdown code fences or other text`,
-      },
-      {
-        role: "user",
-        content: outlineText,
-      },
-    ],
-  });
+        },
+        {
+          role: "user",
+          content: outlineText,
+        },
+      ],
+    });
 
-  const content = response.choices[0]?.message?.content;
-  if (!content) {
-    res.status(500).json({ error: "Failed to parse outline" });
-    return;
+    const content = response.choices[0]?.message?.content;
+    if (!content) {
+      res.status(500).json({ error: "Failed to parse outline" });
+      return;
+    }
+
+    let parsed: { sections: { title: string; content: string }[] };
+    try {
+      const cleaned = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+      parsed = JSON.parse(cleaned);
+    } catch {
+      console.error("Failed to parse AI response:", content.substring(0, 500));
+      res.status(500).json({ error: "Failed to parse AI response" });
+      return;
+    }
+
+    if (!parsed.sections || !Array.isArray(parsed.sections) || parsed.sections.length === 0) {
+      res.status(500).json({ error: "AI did not return any sections" });
+      return;
+    }
+
+    await db.delete(outlineSectionsTable).where(eq(outlineSectionsTable.projectId, projectId));
+
+    const insertedSections = [];
+    for (let i = 0; i < parsed.sections.length; i++) {
+      const section = parsed.sections[i];
+      const [inserted] = await db
+        .insert(outlineSectionsTable)
+        .values({
+          projectId,
+          title: section.title,
+          content: section.content,
+          orderIndex: i,
+        })
+        .returning();
+      insertedSections.push(inserted);
+    }
+
+    res.json(insertedSections);
+  } catch (err) {
+    console.error("Outline upload error:", err);
+    res.status(500).json({ error: "Failed to process outline. Please try again." });
   }
-
-  let parsed: { sections: { title: string; content: string }[] };
-  try {
-    const cleaned = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-    parsed = JSON.parse(cleaned);
-  } catch {
-    res.status(500).json({ error: "Failed to parse AI response" });
-    return;
-  }
-
-  await db.delete(outlineSectionsTable).where(eq(outlineSectionsTable.projectId, projectId));
-
-  const insertedSections = [];
-  for (let i = 0; i < parsed.sections.length; i++) {
-    const section = parsed.sections[i];
-    const [inserted] = await db
-      .insert(outlineSectionsTable)
-      .values({
-        projectId,
-        title: section.title,
-        content: section.content,
-        orderIndex: i,
-      })
-      .returning();
-    insertedSections.push(inserted);
-  }
-
-  res.json(insertedSections);
 });
 
 router.delete("/projects/:id/outline", async (req, res) => {

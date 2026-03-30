@@ -161,7 +161,7 @@ export default function QuestionDetail() {
   if (!question) {
     return (
       <div className="min-h-screen bg-background p-6 flex flex-col items-center justify-center">
-        <h2 className="text-3xl font-serif font-bold mb-6 text-foreground">Question not found</h2>
+        <h2 className="text-xl font-serif font-bold mb-6 text-foreground">Question not found</h2>
         <Button asChild variant="outline" className="border-primary text-primary">
           <Link href="/">
             <ArrowLeft className="w-4 h-4 mr-2" /> Back to Study Deck
@@ -199,7 +199,7 @@ export default function QuestionDetail() {
               <Badge variant="outline" className="mb-3 text-primary border-primary/20 bg-primary/5 px-2.5 py-0.5 text-xs font-medium uppercase tracking-widest">
                 Question {question.id}
               </Badge>
-              <h2 className="text-xl md:text-2xl font-serif text-foreground leading-relaxed font-bold">
+              <h2 className="text-lg md:text-xl font-serif text-foreground leading-relaxed font-bold">
                 {question.questionText}
               </h2>
             </div>
@@ -238,7 +238,7 @@ export default function QuestionDetail() {
                         />
                         
                         <div className={`
-                          flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-base font-bold transition-colors
+                          flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-colors
                           ${isCorrectChoice ? "bg-green-500 text-white" : ""}
                           ${isWrongChoice ? "bg-red-500 text-white" : ""}
                           ${!isChecking && isSelected ? "bg-primary text-primary-foreground" : ""}
@@ -248,7 +248,7 @@ export default function QuestionDetail() {
                           {isCorrectChoice ? <Check className="w-6 h-6" /> : isWrongChoice ? <X className="w-6 h-6" /> : choice.label}
                         </div>
                         
-                        <div className={`flex-1 text-lg leading-relaxed pt-1.5 font-medium ${isCorrectChoice ? "text-green-900" : isWrongChoice ? "text-red-900" : "text-foreground"}`}>
+                        <div className={`flex-1 text-base leading-relaxed pt-1 font-medium ${isCorrectChoice ? "text-green-900" : isWrongChoice ? "text-red-900" : "text-foreground"}`}>
                           {choice.text}
                         </div>
                       </div>
@@ -280,14 +280,14 @@ export default function QuestionDetail() {
               <Button 
                 onClick={handleSubmit} 
                 disabled={!selectedChoiceId || isSubmitting}
-                className="w-full sm:w-auto h-14 px-8 text-lg font-medium shadow-md transition-transform active:scale-95"
+                className="w-full sm:w-auto h-12 px-6 text-base font-medium shadow-md transition-transform active:scale-95"
               >
                 {isSubmitting && <Loader2 className="w-5 h-5 mr-3 animate-spin" />}
                 Submit Answer
               </Button>
             ) : (
               <div className="flex w-full flex-col sm:flex-row justify-between items-center gap-6">
-                <div className="text-xl font-serif font-bold flex items-center">
+                <div className="text-lg font-serif font-bold flex items-center">
                   {question.answeredCorrectly ? (
                     <span className="text-green-600 flex items-center bg-green-50 px-4 py-2 rounded-xl">
                       <Check className="w-6 h-6 mr-3" /> Outstanding!
@@ -360,7 +360,7 @@ export default function QuestionDetail() {
                     <div className="p-2.5 bg-primary/10 rounded-full">
                       <GraduationCap className="w-6 h-6 text-primary" />
                     </div>
-                    <h3 className="text-xl font-serif font-bold text-foreground">Analyzing Key Principles...</h3>
+                    <h3 className="text-lg font-serif font-bold text-foreground">Analyzing Key Principles...</h3>
                   </div>
                   <div className="space-y-4">
                     <Skeleton className="h-4 w-full" />
@@ -381,7 +381,7 @@ export default function QuestionDetail() {
                     <div className="p-2.5 bg-primary/10 rounded-full">
                       <GraduationCap className="w-6 h-6 text-primary" />
                     </div>
-                    <h3 className="text-xl font-serif font-bold text-foreground">Key Principles</h3>
+                    <h3 className="text-lg font-serif font-bold text-foreground">Key Principles</h3>
                   </div>
 
                   <div className="space-y-6">
@@ -392,7 +392,7 @@ export default function QuestionDetail() {
                             {index + 1}
                           </div>
                           <div className="flex-1 space-y-3">
-                            <h4 className="text-lg font-bold text-foreground">{principle.name}</h4>
+                            <h4 className="text-base font-bold text-foreground">{principle.name}</h4>
                             <p className="text-muted-foreground leading-relaxed">{principle.description}</p>
                             <Separator className="my-2" />
                             <div className="flex items-start gap-2">
@@ -510,7 +510,7 @@ export default function QuestionDetail() {
             <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-2">
               <AlertTriangle className="w-6 h-6 text-red-600" />
             </div>
-            <DialogTitle className="text-xl font-serif text-center">Delete Question</DialogTitle>
+            <DialogTitle className="text-lg font-serif text-center">Delete Question</DialogTitle>
             <DialogDescription className="text-center text-muted-foreground">
               Are you sure you want to delete this question? This action cannot be undone.
             </DialogDescription>
