@@ -9,7 +9,10 @@ import {
   useDeleteQuestion,
   getGetQuestionQueryKey,
   getListQuestionsQueryKey,
-  getGetQuestionStatsQueryKey
+  getGetQuestionStatsQueryKey,
+  getListProjectQuestionsQueryKey,
+  getGetProjectQueryKey,
+  getListProjectsQueryKey,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
@@ -18,9 +21,10 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Check, X, Trash2, Loader2, Sparkles, Lightbulb, BookOpen, MessageCircle, Send, GraduationCap } from "lucide-react";
+import { ArrowLeft, Check, X, Trash2, Loader2, Sparkles, Lightbulb, BookOpen, MessageCircle, Send, GraduationCap, AlertTriangle } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -70,13 +74,20 @@ export default function QuestionDetail() {
     }
   });
 
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+
   const deleteQuestionMutation = useDeleteQuestion({
     mutation: {
       onSuccess: () => {
         toast({ title: "Question deleted" });
         queryClient.invalidateQueries({ queryKey: getListQuestionsQueryKey() });
         queryClient.invalidateQueries({ queryKey: getGetQuestionStatsQueryKey() });
-        setLocation("/");
+        if (question?.projectId) {
+          queryClient.invalidateQueries({ queryKey: getListProjectQuestionsQueryKey(question.projectId) });
+          queryClient.invalidateQueries({ queryKey: getGetProjectQueryKey(question.projectId) });
+          queryClient.invalidateQueries({ queryKey: getListProjectsQueryKey() });
+        }
+        setLocation(question?.projectId ? `/project/${question.projectId}` : "/");
       }
     }
   });
@@ -121,9 +132,12 @@ export default function QuestionDetail() {
   };
 
   const handleDelete = () => {
-    if (confirm("Are you sure you want to delete this question?")) {
-      deleteQuestionMutation.mutate({ id });
-    }
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = () => {
+    deleteQuestionMutation.mutate({ id });
+    setIsDeleteDialogOpen(false);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -489,6 +503,29 @@ export default function QuestionDetail() {
           </div>
         )}
       </main>
+
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent className="sm:max-w-md bg-card border-none shadow-2xl rounded-2xl">
+          <DialogHeader>
+            <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-2">
+              <AlertTriangle className="w-6 h-6 text-red-600" />
+            </div>
+            <DialogTitle className="text-xl font-serif text-center">Delete Question</DialogTitle>
+            <DialogDescription className="text-center text-muted-foreground">
+              Are you sure you want to delete this question? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex gap-3 sm:justify-center mt-2">
+            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)} className="flex-1">
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={confirmDelete} disabled={deleteQuestionMutation.isPending} className="flex-1">
+              {deleteQuestionMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
