@@ -194,12 +194,12 @@ export default function QuestionDetail() {
               <div className="h-full bg-primary w-full" />
             )}
           </div>
-          <CardContent className="p-8 md:p-10">
-            <div className="mb-10">
-              <Badge variant="outline" className="mb-4 text-primary border-primary/20 bg-primary/5 px-3 py-1 text-sm font-medium uppercase tracking-widest">
+          <CardContent className="p-6 md:p-8">
+            <div className="mb-8">
+              <Badge variant="outline" className="mb-3 text-primary border-primary/20 bg-primary/5 px-2.5 py-0.5 text-xs font-medium uppercase tracking-widest">
                 Question {question.id}
               </Badge>
-              <h2 className="text-2xl md:text-3xl font-serif text-foreground leading-relaxed font-bold">
+              <h2 className="text-xl md:text-2xl font-serif text-foreground leading-relaxed font-bold">
                 {question.questionText}
               </h2>
             </div>

@@ -72,17 +72,16 @@ export default function ProjectDetail() {
     query: { enabled: !!projectId }
   });
 
+  const [snapshotProgress, setSnapshotProgress] = useState<{ total: number; completed: number; failed: number; status: "idle" | "uploading" | "done" }>({ total: 0, completed: 0, failed: 0, status: "idle" });
+
   const parseImageMutation = useParseQuestionImage({
     mutation: {
-      onSuccess: (data) => {
-        toast({ title: "Question parsed successfully" });
+      onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: getListProjectQuestionsQueryKey(projectId) });
         queryClient.invalidateQueries({ queryKey: getGetProjectQueryKey(projectId) });
-        setLocation(`/question/${data.id}`);
+        queryClient.invalidateQueries({ queryKey: getListProjectsQueryKey() });
       },
-      onError: () => {
-        toast({ title: "Failed to parse image", variant: "destructive" });
-      },
+      onError: () => {},
     },
   });
 
@@ -177,16 +176,35 @@ export default function ProjectDetail() {
   ]);
 
   const handleFileUpload = async (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    try {
-      const base64 = await fileToBase64(file);
-      parseImageMutation.mutate({ data: { imageBase64: base64, projectId } });
-    } catch {
-      toast({ title: "Error reading file", variant: "destructive" });
-    } finally {
-      if (fileInputRef.current) fileInputRef.current.value = "";
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    const fileArray = Array.from(files).slice(0, 30);
+    setSnapshotProgress({ total: fileArray.length, completed: 0, failed: 0, status: "uploading" });
+
+    let completed = 0;
+    let failed = 0;
+
+    for (const file of fileArray) {
+      try {
+        const base64 = await fileToBase64(file);
+        await new Promise<void>((resolve, reject) => {
+          parseImageMutation.mutate(
+            { data: { imageBase64: base64, projectId } },
+            {
+              onSuccess: () => { completed++; setSnapshotProgress(prev => ({ ...prev, completed })); resolve(); },
+              onError: () => { failed++; setSnapshotProgress(prev => ({ ...prev, failed })); resolve(); },
+            }
+          );
+        });
+      } catch {
+        failed++;
+        setSnapshotProgress(prev => ({ ...prev, failed }));
+      }
     }
+
+    setSnapshotProgress({ total: fileArray.length, completed, failed, status: "done" });
+    toast({ title: `${completed} of ${fileArray.length} questions parsed` });
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const handlePdfUpload = async (e: ChangeEvent<HTMLInputElement>) => {
@@ -256,7 +274,7 @@ export default function ProjectDetail() {
 
   return (
     <div className="min-h-screen bg-background pb-24">
-      <header className="bg-primary text-primary-foreground py-12 px-6 relative overflow-hidden">
+      <header className="bg-primary text-primary-foreground py-8 px-6 relative overflow-hidden">
         <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top_right,var(--tw-gradient-stops))] from-white via-transparent to-transparent pointer-events-none" />
         <div className="max-w-4xl mx-auto relative z-10">
           <Link href="/" className="inline-flex items-center text-primary-foreground/80 hover:text-primary-foreground mb-4 text-sm font-medium transition-colors">
@@ -264,7 +282,7 @@ export default function ProjectDetail() {
           </Link>
           <div className="flex flex-col md:flex-row gap-6 items-start md:items-center justify-between">
             <div>
-              <h1 className="text-3xl md:text-4xl font-serif font-bold tracking-tight mb-1">{project?.name}</h1>
+              <h1 className="text-2xl md:text-3xl font-serif font-bold tracking-tight mb-1">{project?.name}</h1>
               <p className="text-primary-foreground/70 text-sm">
                 {project?.totalQuestions} questions · {project?.accuracyPercent}% accuracy
                 {outlineSections && outlineSections.length > 0 && ` · ${outlineSections.length} outline sections`}
@@ -284,28 +302,28 @@ export default function ProjectDetail() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-4xl font-serif font-bold text-foreground">{project?.totalQuestions || 0}</div>
+              <div className="text-3xl font-serif font-bold text-foreground">{project?.totalQuestions || 0}</div>
             </CardContent>
           </Card>
           <Card className="shadow-lg border-0 bg-card rounded-xl">
             <CardHeader className="pb-2">
-              <CardDescription className="font-medium text-muted-foreground flex items-center text-sm uppercase tracking-wider">
+              <CardDescription className="font-medium text-muted-foreground flex items-center text-xs uppercase tracking-wider">
                 <Target className="w-4 h-4 mr-2 text-primary" /> Accuracy
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-4xl font-serif font-bold text-foreground">{project?.accuracyPercent || 0}%</div>
-              <Progress value={project?.accuracyPercent || 0} className="h-1.5 mt-4 bg-muted" />
+              <div className="text-3xl font-serif font-bold text-foreground">{project?.accuracyPercent || 0}%</div>
+              <Progress value={project?.accuracyPercent || 0} className="h-1.5 mt-3 bg-muted" />
             </CardContent>
           </Card>
           <Card className="shadow-lg border-0 bg-card rounded-xl">
             <CardHeader className="pb-2">
-              <CardDescription className="font-medium text-muted-foreground flex items-center text-sm uppercase tracking-wider">
+              <CardDescription className="font-medium text-muted-foreground flex items-center text-xs uppercase tracking-wider">
                 <BrainCircuit className="w-4 h-4 mr-2 text-amber-500" /> Needs Review
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-4xl font-serif font-bold text-amber-600">{project?.incorrectAnswers || 0}</div>
+              <div className="text-3xl font-serif font-bold text-amber-600">{project?.incorrectAnswers || 0}</div>
             </CardContent>
           </Card>
         </div>
@@ -347,8 +365,8 @@ export default function ProjectDetail() {
           <div>
             {/* Upload actions */}
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-serif font-bold text-foreground flex items-center">
-                <ScrollText className="w-6 h-6 mr-3 text-primary" />
+              <h2 className="text-xl font-serif font-bold text-foreground flex items-center">
+                <ScrollText className="w-5 h-5 mr-2 text-primary" />
                 Course Outline
               </h2>
               <div className="flex gap-2">
@@ -439,8 +457,8 @@ export default function ProjectDetail() {
                 <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
                   <ScrollText className="w-10 h-10 text-primary" />
                 </div>
-                <h3 className="text-2xl font-serif font-bold mb-3 text-foreground">No outline uploaded</h3>
-                <p className="text-muted-foreground max-w-md mx-auto mb-8 text-lg leading-relaxed">
+                <h3 className="text-xl font-serif font-bold mb-3 text-foreground">No outline uploaded</h3>
+                <p className="text-muted-foreground max-w-md mx-auto mb-6 text-sm leading-relaxed">
                   Upload your course outline or syllabus to break it into sections for deep-dive study.
                 </p>
                 <Button onClick={() => setIsOutlineDialogOpen(true)} size="lg" variant="outline" className="border-primary/30 text-primary hover:bg-primary hover:text-primary-foreground transition-colors">
@@ -458,7 +476,7 @@ export default function ProjectDetail() {
                           {index + 1}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold text-foreground text-lg mb-1 group-hover:text-primary transition-colors">
+                          <h3 className="font-semibold text-foreground text-base mb-1 group-hover:text-primary transition-colors">
                             {section.title}
                           </h3>
                           <p className="text-muted-foreground text-sm line-clamp-2 leading-relaxed">
@@ -496,21 +514,21 @@ export default function ProjectDetail() {
           <div>
             {/* Action buttons */}
             <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
-              <h2 className="text-2xl font-serif font-bold text-foreground flex items-center">
-                <BookOpen className="w-6 h-6 mr-3 text-primary" />
+              <h2 className="text-xl font-serif font-bold text-foreground flex items-center">
+                <BookOpen className="w-5 h-5 mr-2 text-primary" />
                 Questions
-                {questions && <span className="text-base font-normal text-muted-foreground ml-3">({questions.length})</span>}
+                {questions && <span className="text-sm font-normal text-muted-foreground ml-2">({questions.length})</span>}
               </h2>
               <div className="flex flex-wrap gap-3">
-                <input type="file" accept="image/*" className="hidden" ref={fileInputRef} onChange={handleFileUpload} />
+                <input type="file" accept="image/*" multiple className="hidden" ref={fileInputRef} onChange={handleFileUpload} />
                 <input type="file" accept=".pdf,application/pdf" className="hidden" ref={pdfInputRef} onChange={handlePdfUpload} />
                 <Button
                   size="sm"
                   className="shadow-lg rounded-lg h-9 px-4"
                   onClick={() => fileInputRef.current?.click()}
-                  disabled={parseImageMutation.isPending}
+                  disabled={snapshotProgress.status === "uploading"}
                 >
-                  {parseImageMutation.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Upload className="w-4 h-4 mr-2" />}
+                  {snapshotProgress.status === "uploading" ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Upload className="w-4 h-4 mr-2" />}
                   Snapshot
                 </Button>
                 <Button
@@ -584,6 +602,41 @@ export default function ProjectDetail() {
                 </Dialog>
               </div>
             </div>
+
+            {/* Snapshot Import Progress */}
+            {snapshotProgress.status !== "idle" && (
+              <Card className="shadow-lg border-0 bg-card rounded-xl mb-6 overflow-hidden">
+                <div className={`h-1 ${snapshotProgress.status === "done" ? "bg-green-500" : "bg-primary animate-pulse"}`} />
+                <CardContent className="p-5 flex items-center gap-4">
+                  {snapshotProgress.status === "done" ? (
+                    <>
+                      <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                        <CheckCircle2 className="w-5 h-5 text-green-600" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-semibold text-foreground text-sm">Upload Complete!</p>
+                        <p className="text-muted-foreground text-xs">{snapshotProgress.completed} parsed{snapshotProgress.failed > 0 ? `, ${snapshotProgress.failed} failed` : ""}</p>
+                      </div>
+                      <Button variant="ghost" size="sm" onClick={() => setSnapshotProgress({ total: 0, completed: 0, failed: 0, status: "idle" })}>
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                        <Loader2 className="w-5 h-5 text-primary animate-spin" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-semibold text-foreground text-sm">
+                          Parsing images... ({snapshotProgress.completed + snapshotProgress.failed}/{snapshotProgress.total})
+                        </p>
+                        <Progress value={((snapshotProgress.completed + snapshotProgress.failed) / snapshotProgress.total) * 100} className="h-1.5 mt-2 bg-muted" />
+                      </div>
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+            )}
 
             {/* PDF Import Progress */}
             {pdfProgress.status !== "idle" && pdfProgress.status !== "error" && (
@@ -666,10 +719,10 @@ export default function ProjectDetail() {
                 <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
                   <Sparkles className="w-10 h-10 text-primary" />
                 </div>
-                <h3 className="text-2xl font-serif font-bold mb-3 text-foreground">
+                <h3 className="text-xl font-serif font-bold mb-3 text-foreground">
                   {activeFilter === "all" ? "No questions yet" : `No ${filterLabel.toLowerCase()} questions`}
                 </h3>
-                <p className="text-muted-foreground max-w-md mx-auto mb-8 text-lg leading-relaxed">
+                <p className="text-muted-foreground max-w-md mx-auto mb-6 text-sm leading-relaxed">
                   {activeFilter === "all"
                     ? "Upload a photo or PDF of multiple-choice questions to get started."
                     : "Try a different filter or keep studying!"}
@@ -709,7 +762,7 @@ export default function ProjectDetail() {
                               {formatDistanceToNow(new Date(q.createdAt), { addSuffix: true })}
                             </span>
                           </div>
-                          <p className="font-medium text-foreground line-clamp-2 leading-relaxed text-lg">{q.questionText}</p>
+                          <p className="font-medium text-foreground line-clamp-2 leading-relaxed text-sm">{q.questionText}</p>
                         </div>
                         <div className="self-center p-3 rounded-full bg-primary/5 text-primary opacity-0 group-hover:opacity-100 transition-all transform group-hover:translate-x-1">
                           <ArrowRight className="w-5 h-5" />

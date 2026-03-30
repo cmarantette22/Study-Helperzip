@@ -69,12 +69,12 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background pb-24">
-      <header className="bg-primary text-primary-foreground py-16 px-6 relative overflow-hidden">
+      <header className="bg-primary text-primary-foreground py-10 px-6 relative overflow-hidden">
         <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top_right,var(--tw-gradient-stops))] from-white via-transparent to-transparent pointer-events-none" />
         <div className="max-w-4xl mx-auto flex flex-col md:flex-row gap-8 items-center justify-between relative z-10">
           <div>
-            <h1 className="text-4xl md:text-5xl font-serif font-bold tracking-tight mb-3">Study Buddy</h1>
-            <p className="text-primary-foreground/90 text-lg md:text-xl font-medium max-w-md">
+            <h1 className="text-3xl md:text-4xl font-serif font-bold tracking-tight mb-2">Study Buddy</h1>
+            <p className="text-primary-foreground/90 text-sm md:text-base font-medium max-w-md">
               Create study projects to organize your multiple-choice questions.
             </p>
           </div>
@@ -134,33 +134,33 @@ export default function Home() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-4xl font-serif font-bold text-foreground">
-                {isLoadingStats ? <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /> : stats?.totalQuestions || 0}
+              <div className="text-3xl font-serif font-bold text-foreground">
+                {isLoadingStats ? <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /> : stats?.totalQuestions || 0}
               </div>
             </CardContent>
           </Card>
           <Card className="shadow-lg border-0 bg-card rounded-xl">
             <CardHeader className="pb-2">
-              <CardDescription className="font-medium text-muted-foreground flex items-center text-sm uppercase tracking-wider">
+              <CardDescription className="font-medium text-muted-foreground flex items-center text-xs uppercase tracking-wider">
                 <Target className="w-4 h-4 mr-2 text-primary" /> Accuracy
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-4xl font-serif font-bold flex items-baseline gap-2 text-foreground">
-                {isLoadingStats ? <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /> : `${stats?.accuracyPercent || 0}%`}
+              <div className="text-3xl font-serif font-bold flex items-baseline gap-2 text-foreground">
+                {isLoadingStats ? <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /> : `${stats?.accuracyPercent || 0}%`}
               </div>
-              <Progress value={stats?.accuracyPercent || 0} className="h-1.5 mt-4 bg-muted" />
+              <Progress value={stats?.accuracyPercent || 0} className="h-1.5 mt-3 bg-muted" />
             </CardContent>
           </Card>
           <Card className="shadow-lg border-0 bg-card rounded-xl">
             <CardHeader className="pb-2">
-              <CardDescription className="font-medium text-muted-foreground flex items-center text-sm uppercase tracking-wider">
+              <CardDescription className="font-medium text-muted-foreground flex items-center text-xs uppercase tracking-wider">
                 <BrainCircuit className="w-4 h-4 mr-2 text-amber-500" /> Needs Review
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-4xl font-serif font-bold text-amber-600">
-                {isLoadingStats ? <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /> : stats?.incorrectAnswers || 0}
+              <div className="text-3xl font-serif font-bold text-amber-600">
+                {isLoadingStats ? <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /> : stats?.incorrectAnswers || 0}
               </div>
             </CardContent>
           </Card>
@@ -168,8 +168,8 @@ export default function Home() {
 
         {/* Projects List */}
         <div>
-          <h2 className="text-2xl font-serif font-bold text-foreground mb-6 flex items-center">
-            <BookOpen className="w-6 h-6 mr-3 text-primary" />
+          <h2 className="text-xl font-serif font-bold text-foreground mb-5 flex items-center">
+            <BookOpen className="w-5 h-5 mr-2 text-primary" />
             Study Projects
           </h2>
 
@@ -182,8 +182,8 @@ export default function Home() {
               <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
                 <Sparkles className="w-10 h-10 text-primary" />
               </div>
-              <h3 className="text-2xl font-serif font-bold mb-3 text-foreground">No projects yet</h3>
-              <p className="text-muted-foreground max-w-md mx-auto mb-8 text-lg leading-relaxed">
+              <h3 className="text-xl font-serif font-bold mb-3 text-foreground">No projects yet</h3>
+              <p className="text-muted-foreground max-w-md mx-auto mb-6 text-sm leading-relaxed">
                 Create a project to organize your study questions by subject or exam.
               </p>
               <Button onClick={() => setIsNewProjectOpen(true)} size="lg" variant="outline" className="border-primary/30 text-primary hover:bg-primary hover:text-primary-foreground transition-colors">
@@ -201,8 +201,8 @@ export default function Home() {
                         <FolderOpen className="w-6 h-6 text-primary" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-foreground text-lg truncate">{p.name}</p>
-                        <p className="text-sm text-muted-foreground mt-1">
+                        <p className="font-semibold text-foreground text-base truncate">{p.name}</p>
+                        <p className="text-xs text-muted-foreground mt-1">
                           Created {formatDistanceToNow(new Date(p.createdAt), { addSuffix: true })}
                         </p>
                       </div>

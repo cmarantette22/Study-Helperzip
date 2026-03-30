@@ -117,7 +117,7 @@ export default function OutlineSectionDetail() {
               <span className="inline-block bg-primary/10 text-primary text-xs font-semibold uppercase tracking-wider px-3 py-1 rounded-md mb-4">
                 Outline Section
               </span>
-              <h1 className="text-2xl md:text-3xl font-serif font-bold text-foreground leading-tight mb-4">
+              <h1 className="text-xl md:text-2xl font-serif font-bold text-foreground leading-tight mb-4">
                 {section.title}
               </h1>
               <div className="text-muted-foreground leading-relaxed whitespace-pre-wrap">
@@ -169,14 +169,14 @@ export default function OutlineSectionDetail() {
           <Card className="shadow-lg border-0 bg-card rounded-2xl overflow-hidden">
             <div className="h-1 bg-gradient-to-r from-violet-500 via-purple-500 to-fuchsia-500" />
             <CardContent className="p-8 md:p-10">
-              <h3 className="text-xl font-serif font-bold text-foreground mb-6 flex items-center">
-                <GraduationCap className="w-6 h-6 mr-3 text-violet-600" />
+              <h3 className="text-lg font-serif font-bold text-foreground mb-5 flex items-center">
+                <GraduationCap className="w-5 h-5 mr-2 text-violet-600" />
                 Key Principles
               </h3>
               <div className="space-y-6">
                 {deepExplainMutation.data.principles.map((p, i) => (
                   <div key={i} className="bg-gradient-to-br from-violet-50/50 to-purple-50/50 rounded-xl p-6 border border-violet-100">
-                    <h4 className="font-bold text-foreground text-lg mb-2 flex items-center">
+                    <h4 className="font-bold text-foreground text-base mb-2 flex items-center">
                       <Sparkles className="w-4 h-4 mr-2 text-violet-600" />
                       {p.name}
                     </h4>
@@ -198,8 +198,8 @@ export default function OutlineSectionDetail() {
           <Card className="shadow-lg border-0 bg-card rounded-2xl overflow-hidden">
             <div className="h-1 bg-gradient-to-r from-blue-500 via-cyan-500 to-teal-500" />
             <CardContent className="p-8">
-              <h3 className="text-xl font-serif font-bold text-foreground mb-6 flex items-center">
-                <MessageCircle className="w-6 h-6 mr-3 text-blue-600" />
+              <h3 className="text-lg font-serif font-bold text-foreground mb-5 flex items-center">
+                <MessageCircle className="w-5 h-5 mr-2 text-blue-600" />
                 Ask About This Section
               </h3>
 
