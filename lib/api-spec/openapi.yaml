@@ -792,6 +792,8 @@ components:
         answeredCorrectly:
           type: boolean
           nullable: true
+        multiSelect:
+          type: boolean
         createdAt:
           type: string
           format: date-time
@@ -800,6 +802,7 @@ components:
         - questionText
         - choices
         - answered
+        - multiSelect
         - createdAt
     CreateQuestionBody:
       type: object
@@ -808,6 +811,8 @@ components:
           type: string
         projectId:
           type: integer
+        multiSelect:
+          type: boolean
         choices:
           type: array
           items:
@@ -863,8 +868,10 @@ components:
       properties:
         choiceId:
           type: integer
-      required:
-        - choiceId
+        choiceIds:
+          type: array
+          items:
+            type: integer
     CheckAnswerResult:
       type: object
       properties:
@@ -874,10 +881,16 @@ components:
           type: integer
         selectedChoiceId:
           type: integer
+        correctChoiceIds:
+          type: array
+          items:
+            type: integer
+        selectedChoiceIds:
+          type: array
+          items:
+            type: integer
       required:
         - correct
-        - correctChoiceId
-        - selectedChoiceId
     ExplainResult:
       type: object
       properties:
@@ -1008,6 +1021,8 @@ components:
       properties:
         questionText:
           type: string
+        multiSelect:
+          type: boolean
         choices:
           type: array
           items:

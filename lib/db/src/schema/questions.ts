@@ -9,6 +9,7 @@ export const questionsTable = pgTable("questions", {
   questionText: text("question_text").notNull(),
   answered: boolean("answered").notNull().default(false),
   answeredCorrectly: boolean("answered_correctly"),
+  multiSelect: boolean("multi_select").notNull().default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

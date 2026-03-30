@@ -10,5 +10,6 @@ import type { CreateQuestionBodyChoicesItem } from "./createQuestionBodyChoicesI
 export interface CreateQuestionBody {
   questionText: string;
   projectId?: number;
+  multiSelect?: boolean;
   choices: CreateQuestionBodyChoicesItem[];
 }

@@ -14,5 +14,6 @@ export interface Question {
   choices: Choice[];
   answered: boolean;
   answeredCorrectly?: boolean | null;
+  multiSelect: boolean;
   createdAt: Date;
 }

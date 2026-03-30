@@ -100,6 +100,7 @@ export const ListProjectQuestionsResponseItem = zod.object({
   ),
   answered: zod.boolean(),
   answeredCorrectly: zod.boolean().nullish(),
+  multiSelect: zod.boolean(),
   createdAt: zod.coerce.date(),
 });
 export const ListProjectQuestionsResponse = zod.array(
@@ -265,6 +266,7 @@ export const ListQuestionsResponseItem = zod.object({
   ),
   answered: zod.boolean(),
   answeredCorrectly: zod.boolean().nullish(),
+  multiSelect: zod.boolean(),
   createdAt: zod.coerce.date(),
 });
 export const ListQuestionsResponse = zod.array(ListQuestionsResponseItem);
@@ -275,6 +277,7 @@ export const ListQuestionsResponse = zod.array(ListQuestionsResponseItem);
 export const CreateQuestionBody = zod.object({
   questionText: zod.string(),
   projectId: zod.number().optional(),
+  multiSelect: zod.boolean().optional(),
   choices: zod.array(
     zod.object({
       label: zod.string(),
@@ -309,6 +312,7 @@ export const ParsePdfQuestionsResponse = zod.object({
       ),
       answered: zod.boolean(),
       answeredCorrectly: zod.boolean().nullish(),
+      multiSelect: zod.boolean(),
       createdAt: zod.coerce.date(),
     }),
   ),
@@ -338,6 +342,7 @@ export const ParseQuestionImageResponse = zod.object({
   ),
   answered: zod.boolean(),
   answeredCorrectly: zod.boolean().nullish(),
+  multiSelect: zod.boolean(),
   createdAt: zod.coerce.date(),
 });
 
@@ -363,6 +368,7 @@ export const GetQuestionResponse = zod.object({
   ),
   answered: zod.boolean(),
   answeredCorrectly: zod.boolean().nullish(),
+  multiSelect: zod.boolean(),
   createdAt: zod.coerce.date(),
 });
 
@@ -375,6 +381,7 @@ export const UpdateQuestionParams = zod.object({
 
 export const UpdateQuestionBody = zod.object({
   questionText: zod.string(),
+  multiSelect: zod.boolean().optional(),
   choices: zod.array(
     zod.object({
       id: zod.number().optional(),
@@ -400,6 +407,7 @@ export const UpdateQuestionResponse = zod.object({
   ),
   answered: zod.boolean(),
   answeredCorrectly: zod.boolean().nullish(),
+  multiSelect: zod.boolean(),
   createdAt: zod.coerce.date(),
 });
 
@@ -418,13 +426,16 @@ export const CheckAnswerParams = zod.object({
 });
 
 export const CheckAnswerBody = zod.object({
-  choiceId: zod.number(),
+  choiceId: zod.number().optional(),
+  choiceIds: zod.array(zod.number()).optional(),
 });
 
 export const CheckAnswerResponse = zod.object({
   correct: zod.boolean(),
-  correctChoiceId: zod.number(),
-  selectedChoiceId: zod.number(),
+  correctChoiceId: zod.number().optional(),
+  selectedChoiceId: zod.number().optional(),
+  correctChoiceIds: zod.array(zod.number()).optional(),
+  selectedChoiceIds: zod.array(zod.number()).optional(),
 });
 
 /**

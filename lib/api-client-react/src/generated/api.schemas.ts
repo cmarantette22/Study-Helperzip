@@ -49,6 +49,7 @@ export interface Question {
   choices: Choice[];
   answered: boolean;
   answeredCorrectly?: boolean | null;
+  multiSelect: boolean;
   createdAt: string;
 }
 
@@ -61,6 +62,7 @@ export type CreateQuestionBodyChoicesItem = {
 export interface CreateQuestionBody {
   questionText: string;
   projectId?: number;
+  multiSelect?: boolean;
   choices: CreateQuestionBodyChoicesItem[];
 }
 
@@ -82,13 +84,16 @@ export interface ParseImageBody {
 }
 
 export interface CheckAnswerBody {
-  choiceId: number;
+  choiceId?: number;
+  choiceIds?: number[];
 }
 
 export interface CheckAnswerResult {
   correct: boolean;
-  correctChoiceId: number;
-  selectedChoiceId: number;
+  correctChoiceId?: number;
+  selectedChoiceId?: number;
+  correctChoiceIds?: number[];
+  selectedChoiceIds?: number[];
 }
 
 export type ExplainResultExplanationsItem = {
@@ -171,6 +176,7 @@ export type UpdateQuestionBodyChoicesItem = {
 
 export interface UpdateQuestionBody {
   questionText: string;
+  multiSelect?: boolean;
   choices: UpdateQuestionBodyChoicesItem[];
 }
 

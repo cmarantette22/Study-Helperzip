@@ -56,6 +56,7 @@ A study app for multiple-choice questions with AI-powered features:
 - **Course outline upload**: Upload a course outline (text or PDF), AI breaks it into study sections
 - **Section deep dive**: Get structured analysis of principles for each outline section
 - **Section follow-up chat**: Multi-turn conversation with AI tutor about any outline section
+- **Multi-select questions**: Questions with "Check all that apply" or "Select all that apply" use checkboxes instead of radio buttons; users select multiple answers, checked against the full set of correct choices (all-or-nothing); AI parsing detects multi-select automatically; edit mode supports toggling multiple correct choices
 - **Inline editing**: Edit question text, choices, and correct answer marking directly on the question detail page; edit outline section title and content on the section detail page
 - **User management**: Admin-created accounts with temporary passwords and forced password change on first login; role-based access (admin/user)
 - **Authentication**: Session-based auth with login, logout, and password change; auth-gated routes
@@ -63,7 +64,7 @@ A study app for multiple-choice questions with AI-powered features:
 ### Database Schema
 
 - **projects**: id, name, created_at
-- **questions**: id, project_id (FK → projects, cascade delete), question_text, answered, answered_correctly, created_at
+- **questions**: id, project_id (FK → projects, cascade delete), question_text, answered, answered_correctly, multi_select (boolean, default false), created_at
 - **choices**: id, question_id (FK → questions, cascade delete), label, text, is_correct
 - **outline_sections**: id, project_id (FK → projects, cascade delete), title, content, order_index, created_at
 - **users**: id, name, email, password_hash, role (admin/user), must_change_password, created_at

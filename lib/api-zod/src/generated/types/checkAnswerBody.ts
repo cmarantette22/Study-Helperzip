@@ -7,5 +7,6 @@
  */
 
 export interface CheckAnswerBody {
-  choiceId: number;
+  choiceId?: number;
+  choiceIds?: number[];
 }

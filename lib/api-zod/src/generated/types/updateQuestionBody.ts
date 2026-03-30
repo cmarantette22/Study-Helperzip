@@ -9,5 +9,6 @@ import type { UpdateQuestionBodyChoicesItem } from "./updateQuestionBodyChoicesI
 
 export interface UpdateQuestionBody {
   questionText: string;
+  multiSelect?: boolean;
   choices: UpdateQuestionBodyChoicesItem[];
 }

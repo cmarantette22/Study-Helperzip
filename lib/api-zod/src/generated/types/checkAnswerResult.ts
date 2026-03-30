@@ -8,6 +8,8 @@
 
 export interface CheckAnswerResult {
   correct: boolean;
-  correctChoiceId: number;
-  selectedChoiceId: number;
+  correctChoiceId?: number;
+  selectedChoiceId?: number;
+  correctChoiceIds?: number[];
+  selectedChoiceIds?: number[];
 }

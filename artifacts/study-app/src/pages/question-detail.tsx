@@ -19,6 +19,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
@@ -46,6 +47,7 @@ export default function QuestionDetail() {
   });
 
   const [selectedChoiceId, setSelectedChoiceId] = useState<number | null>(null);
+  const [selectedChoiceIds, setSelectedChoiceIds] = useState<number[]>([]);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatInput, setChatInput] = useState("");
   const [showChat, setShowChat] = useState(false);
@@ -106,15 +108,16 @@ export default function QuestionDetail() {
     if (!editQuestionText.trim()) return;
     updateQuestionMutation.mutate({
       id,
-      data: { questionText: editQuestionText, choices: editChoices },
+      data: { questionText: editQuestionText, choices: editChoices, multiSelect: question?.multiSelect ?? false },
     });
   };
 
   const updateEditChoice = (index: number, field: string, value: string | boolean) => {
+    const isMulti = question?.multiSelect ?? false;
     setEditChoices((prev) =>
       prev.map((c, i) => {
         if (i !== index) {
-          if (field === "isCorrect" && value === true) return { ...c, isCorrect: false };
+          if (field === "isCorrect" && value === true && !isMulti) return { ...c, isCorrect: false };
           return c;
         }
         return { ...c, [field]: value };
@@ -149,10 +152,23 @@ export default function QuestionDetail() {
   const deepExplanation = deepExplainMutation.data;
   
   const correctChoiceId = question?.choices.find(c => c.isCorrect)?.id;
+  const correctChoiceIds = question?.choices.filter(c => c.isCorrect).map(c => c.id) ?? [];
+  const isMultiSelect = question?.multiSelect ?? false;
+
+  const toggleMultiChoice = (choiceId: number) => {
+    setSelectedChoiceIds((prev) =>
+      prev.includes(choiceId) ? prev.filter((id) => id !== choiceId) : [...prev, choiceId]
+    );
+  };
 
   const handleSubmit = () => {
-    if (!selectedChoiceId) return;
-    checkAnswerMutation.mutate({ id, data: { choiceId: selectedChoiceId } });
+    if (isMultiSelect) {
+      if (selectedChoiceIds.length === 0) return;
+      checkAnswerMutation.mutate({ id, data: { choiceIds: selectedChoiceIds } });
+    } else {
+      if (!selectedChoiceId) return;
+      checkAnswerMutation.mutate({ id, data: { choiceId: selectedChoiceId } });
+    }
   };
 
   const handleExplain = () => {
@@ -275,7 +291,7 @@ export default function QuestionDetail() {
                         variant={choice.isCorrect ? "default" : "outline"}
                         size="sm"
                         className="text-xs flex-shrink-0"
-                        onClick={() => updateEditChoice(i, "isCorrect", true)}
+                        onClick={() => updateEditChoice(i, "isCorrect", isMultiSelect ? !choice.isCorrect : true)}
                       >
                         {choice.isCorrect ? <Check className="w-3 h-3 mr-1" /> : null}
                         Correct
@@ -299,11 +315,83 @@ export default function QuestionDetail() {
               <Badge variant="outline" className="mb-3 text-primary border-primary/20 bg-primary/5 px-2.5 py-0.5 text-xs font-medium uppercase tracking-widest">
                 Question {question.id}
               </Badge>
+              {isMultiSelect && (
+                <Badge variant="outline" className="mb-3 ml-2 text-amber-700 border-amber-300 bg-amber-50 px-2.5 py-0.5 text-xs font-medium uppercase tracking-widest">
+                  Select All That Apply
+                </Badge>
+              )}
               <h2 className="text-lg md:text-xl font-serif text-foreground leading-relaxed font-bold">
                 {question.questionText}
               </h2>
             </div>
 
+            {isMultiSelect ? (
+              <div className="space-y-4">
+                {question.choices.map((choice) => {
+                  const isSelected = selectedChoiceIds.includes(choice.id) || (isChecking && checkResult?.selectedChoiceIds?.includes(choice.id));
+                  const isCorrectChoice = isChecking && correctChoiceIds.includes(choice.id);
+                  const isWrongChoice = isChecking && isSelected && !isCorrectChoice;
+
+                  const explanation = explanations?.find(e => e.choiceId === choice.id);
+
+                  return (
+                    <div key={choice.id} className="relative">
+                      <div
+                        onClick={() => !isChecking && toggleMultiChoice(choice.id)}
+                        className={`
+                          flex flex-col p-5 border-2 rounded-xl cursor-pointer transition-all duration-200
+                          ${!isChecking && isSelected ? "border-primary bg-primary/5 shadow-md transform scale-[1.01]" : ""}
+                          ${!isChecking && !isSelected ? "border-border hover:border-primary/40 hover:bg-muted/30" : ""}
+                          ${isCorrectChoice ? "border-green-500 bg-green-50 shadow-md transform scale-[1.01]" : ""}
+                          ${isWrongChoice ? "border-red-500 bg-red-50" : ""}
+                          ${isChecking && !isCorrectChoice && !isWrongChoice ? "opacity-60 border-border bg-card" : ""}
+                        `}
+                      >
+                        <div className="flex items-start gap-4">
+                          <Checkbox
+                            checked={!!isSelected}
+                            disabled={!!isChecking}
+                            onCheckedChange={() => !isChecking && toggleMultiChoice(choice.id)}
+                            className="mt-1.5 sr-only"
+                          />
+
+                          <div className={`
+                            flex-shrink-0 w-8 h-8 rounded-md flex items-center justify-center text-sm font-bold transition-colors
+                            ${isCorrectChoice ? "bg-green-500 text-white" : ""}
+                            ${isWrongChoice ? "bg-red-500 text-white" : ""}
+                            ${!isChecking && isSelected ? "bg-primary text-primary-foreground" : ""}
+                            ${!isChecking && !isSelected ? "bg-muted text-muted-foreground" : ""}
+                            ${isChecking && !isCorrectChoice && !isWrongChoice ? "bg-muted text-muted-foreground" : ""}
+                          `}>
+                            {isCorrectChoice ? <Check className="w-6 h-6" /> : isWrongChoice ? <X className="w-6 h-6" /> : choice.label}
+                          </div>
+
+                          <div className={`flex-1 text-base leading-relaxed pt-1 font-medium ${isCorrectChoice ? "text-green-900" : isWrongChoice ? "text-red-900" : "text-foreground"}`}>
+                            {choice.text}
+                          </div>
+                        </div>
+
+                        {explanation && (
+                          <div className={`mt-5 pt-5 border-t ${isCorrectChoice ? "border-green-200" : isWrongChoice ? "border-red-200" : "border-border"} text-base animate-in fade-in slide-in-from-top-2`}>
+                            <div className="flex items-start gap-3">
+                              <div className={`p-2 rounded-full mt-0.5 ${isCorrectChoice ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"}`}>
+                                <Lightbulb className="w-5 h-5" />
+                              </div>
+                              <p className="text-muted-foreground leading-relaxed">
+                                <strong className={`font-semibold ${isCorrectChoice ? "text-green-800" : "text-amber-800"}`}>
+                                  {isCorrectChoice ? "Why it's right: " : "Why it's wrong: "}
+                                </strong>
+                                {explanation.explanation}
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
             <RadioGroup 
               value={selectedChoiceId?.toString() || (question.answered && checkResult?.selectedChoiceId ? checkResult.selectedChoiceId.toString() : "")} 
               onValueChange={(val) => !isChecking && setSelectedChoiceId(parseInt(val, 10))}
@@ -373,6 +461,7 @@ export default function QuestionDetail() {
                 );
               })}
             </RadioGroup>
+            )}
             </>
             )}
           </CardContent>
@@ -381,7 +470,7 @@ export default function QuestionDetail() {
             {!isChecking ? (
               <Button 
                 onClick={handleSubmit} 
-                disabled={!selectedChoiceId || isSubmitting}
+                disabled={(isMultiSelect ? selectedChoiceIds.length === 0 : !selectedChoiceId) || isSubmitting}
                 className="w-full sm:w-auto h-12 px-6 text-base font-medium shadow-md transition-transform active:scale-95"
               >
                 {isSubmitting && <Loader2 className="w-5 h-5 mr-3 animate-spin" />}

@@ -41,9 +41,10 @@ router.get("/questions", async (_req, res) => {
 router.post("/questions", async (req, res) => {
   const body = CreateQuestionBody.parse(req.body);
 
+  const multiSelect = body.multiSelect ?? false;
   const [question] = await db
     .insert(questionsTable)
-    .values({ questionText: body.questionText, projectId: body.projectId ?? null })
+    .values({ questionText: body.questionText, projectId: body.projectId ?? null, multiSelect })
     .returning();
 
   const choiceValues = body.choices.map((c: { label: string; text: string; isCorrect: boolean }) => ({
@@ -70,11 +71,14 @@ router.post("/questions/parse-image", async (req, res) => {
     messages: [
       {
         role: "system",
-        content: `You are a question parser. Given an image of a multiple-choice question, extract the question text and all answer choices. Identify which answer is correct (look for check marks, filled circles, or other indicators).
+        content: `You are a question parser. Given an image of a multiple-choice question, extract the question text and all answer choices. Identify which answer(s) are correct (look for check marks, filled circles, or other indicators).
+
+If the question says "Check all that apply", "Select all that apply", or otherwise indicates multiple correct answers, set "multiSelect" to true and mark ALL correct choices with "isCorrect": true. Otherwise set "multiSelect" to false and mark only one correct choice.
 
 Return your response as valid JSON with this exact format:
 {
   "questionText": "The full question text including any context/setup",
+  "multiSelect": false,
   "choices": [
     { "label": "A", "text": "Choice text here", "isCorrect": false },
     { "label": "B", "text": "Choice text here", "isCorrect": false },
@@ -109,7 +113,7 @@ Important: Return ONLY the JSON, no markdown code fences or other text.`,
     return;
   }
 
-  let parsed: { questionText: string; choices: { label: string; text: string; isCorrect: boolean }[] };
+  let parsed: { questionText: string; multiSelect?: boolean; choices: { label: string; text: string; isCorrect: boolean }[] };
   try {
     const cleaned = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
     parsed = JSON.parse(cleaned);
@@ -118,9 +122,10 @@ Important: Return ONLY the JSON, no markdown code fences or other text.`,
     return;
   }
 
+  const multiSelect = parsed.multiSelect ?? /check all that apply|select all that apply/i.test(parsed.questionText);
   const [question] = await db
     .insert(questionsTable)
-    .values({ questionText: parsed.questionText, projectId: body.projectId ?? null })
+    .values({ questionText: parsed.questionText, projectId: body.projectId ?? null, multiSelect })
     .returning();
 
   const choiceValues = parsed.choices.map((c) => ({
@@ -169,7 +174,8 @@ Your job:
 1. Parse every question from the document
 2. Extract the full question text (including any context, tables, or scenarios described)
 3. Extract all answer choices with their labels
-4. Use the answer key to determine which choice is correct for each question
+4. Use the answer key to determine which choice(s) are correct for each question
+5. If a question says "Check all that apply", "Select all that apply", or otherwise indicates multiple correct answers, set "multiSelect" to true and mark ALL correct choices. Otherwise set "multiSelect" to false.
 
 Return your response as valid JSON with this exact format:
 {
@@ -177,6 +183,7 @@ Return your response as valid JSON with this exact format:
     {
       "questionNumber": 1,
       "questionText": "Full question text here",
+      "multiSelect": false,
       "choices": [
         { "label": "A", "text": "Choice A text", "isCorrect": true },
         { "label": "B", "text": "Choice B text", "isCorrect": false },
@@ -192,7 +199,8 @@ Important rules:
 - Include ALL questions from the document, do not skip any
 - If a question references a table or data, include that context in the questionText
 - Use the answer key to correctly mark isCorrect for each choice
-- Preserve the full text of each choice, including any explanations within the choice`,
+- Preserve the full text of each choice, including any explanations within the choice
+- For "check all that apply" questions, set multiSelect to true and mark multiple isCorrect choices`,
       },
       {
         role: "user",
@@ -207,7 +215,7 @@ Important rules:
     return;
   }
 
-  let parsed: { questions: { questionNumber: number; questionText: string; choices: { label: string; text: string; isCorrect: boolean }[] }[] };
+  let parsed: { questions: { questionNumber: number; questionText: string; multiSelect?: boolean; choices: { label: string; text: string; isCorrect: boolean }[] }[] };
   try {
     const cleaned = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
     parsed = JSON.parse(cleaned);
@@ -219,9 +227,10 @@ Important rules:
   const savedQuestions = [];
 
   for (const q of parsed.questions) {
+    const multiSelect = q.multiSelect ?? /check all that apply|select all that apply/i.test(q.questionText);
     const [question] = await db
       .insert(questionsTable)
-      .values({ questionText: q.questionText, projectId: body.projectId ?? null })
+      .values({ questionText: q.questionText, projectId: body.projectId ?? null, multiSelect })
       .returning();
 
     const choiceValues = q.choices.map((c) => ({
@@ -308,9 +317,13 @@ router.put("/questions/:id", async (req, res) => {
       return;
     }
 
+    const updateData: Record<string, any> = { questionText: body.questionText };
+    if (body.multiSelect !== undefined) {
+      updateData.multiSelect = body.multiSelect;
+    }
     await db
       .update(questionsTable)
-      .set({ questionText: body.questionText })
+      .set(updateData)
       .where(eq(questionsTable.id, id));
 
     await db.delete(choicesTable).where(eq(choicesTable.questionId, id));
@@ -375,19 +388,46 @@ router.post("/questions/:id/check", async (req, res) => {
     .from(choicesTable)
     .where(eq(choicesTable.questionId, id));
 
-  const correctChoice = choices.find((c) => c.isCorrect);
-  const isCorrect = body.choiceId === correctChoice?.id;
+  if (question.multiSelect) {
+    if (!body.choiceIds || body.choiceIds.length === 0) {
+      res.status(400).json({ error: "choiceIds is required for multi-select questions" });
+      return;
+    }
+    const selectedIds = body.choiceIds;
+    const correctIds = choices.filter((c) => c.isCorrect).map((c) => c.id);
+    const selectedSet = new Set(selectedIds);
+    const correctSet = new Set(correctIds);
+    const isCorrect = selectedSet.size === correctSet.size && [...selectedSet].every((id) => correctSet.has(id));
 
-  await db
-    .update(questionsTable)
-    .set({ answered: true, answeredCorrectly: isCorrect })
-    .where(eq(questionsTable.id, id));
+    await db
+      .update(questionsTable)
+      .set({ answered: true, answeredCorrectly: isCorrect })
+      .where(eq(questionsTable.id, id));
 
-  res.json({
-    correct: isCorrect,
-    correctChoiceId: correctChoice?.id ?? 0,
-    selectedChoiceId: body.choiceId,
-  });
+    res.json({
+      correct: isCorrect,
+      correctChoiceIds: correctIds,
+      selectedChoiceIds: selectedIds,
+    });
+  } else {
+    if (body.choiceId === undefined || body.choiceId === null) {
+      res.status(400).json({ error: "choiceId is required for single-select questions" });
+      return;
+    }
+    const correctChoice = choices.find((c) => c.isCorrect);
+    const isCorrect = body.choiceId === correctChoice?.id;
+
+    await db
+      .update(questionsTable)
+      .set({ answered: true, answeredCorrectly: isCorrect })
+      .where(eq(questionsTable.id, id));
+
+    res.json({
+      correct: isCorrect,
+      correctChoiceId: correctChoice?.id ?? 0,
+      selectedChoiceId: body.choiceId,
+    });
+  }
 });
 
 router.post("/questions/:id/explain", async (req, res) => {
