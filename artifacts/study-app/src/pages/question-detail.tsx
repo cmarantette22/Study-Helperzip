@@ -47,6 +47,14 @@ export default function QuestionDetail() {
     query: { enabled: !!id }
   });
 
+  const { data: unansweredQuestions } = useListProjectQuestions(
+    question?.projectId ?? 0,
+    { filter: "unanswered" },
+    { query: { enabled: !!question?.projectId } }
+  );
+
+  const nextQuestionId = unansweredQuestions?.find((q) => q.id !== id)?.id;
+
   const [selectedChoiceId, setSelectedChoiceId] = useState<number | null>(null);
   const [selectedChoiceIds, setSelectedChoiceIds] = useState<number[]>([]);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
@@ -60,6 +68,9 @@ export default function QuestionDetail() {
         queryClient.invalidateQueries({ queryKey: getGetQuestionQueryKey(id) });
         queryClient.invalidateQueries({ queryKey: getListQuestionsQueryKey() });
         queryClient.invalidateQueries({ queryKey: getGetQuestionStatsQueryKey() });
+        if (question?.projectId) {
+          queryClient.invalidateQueries({ queryKey: getListProjectQuestionsQueryKey(question.projectId) });
+        }
       }
     }
   });
@@ -506,8 +517,11 @@ export default function QuestionDetail() {
                       Explain
                     </Button>
                   )}
-                  <Button asChild className="flex-1 sm:flex-none h-12 px-6 shadow-md">
-                    <Link href="/">Next Question</Link>
+                  <Button
+                    className="flex-1 sm:flex-none h-12 px-6 shadow-md"
+                    onClick={() => setLocation(nextQuestionId ? `/question/${nextQuestionId}` : (question?.projectId ? `/project/${question.projectId}` : "/"))}
+                  >
+                    {nextQuestionId ? "Next Question" : "Back to Deck"}
                   </Button>
                 </div>
               </div>
