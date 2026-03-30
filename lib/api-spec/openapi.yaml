@@ -10,6 +10,8 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: questions
+    description: Question management
 paths:
   /healthz:
     get:
@@ -24,6 +26,144 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /questions:
+    get:
+      operationId: listQuestions
+      tags: [questions]
+      summary: List all questions
+      responses:
+        "200":
+          description: List of questions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Question"
+    post:
+      operationId: createQuestion
+      tags: [questions]
+      summary: Create a question manually
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateQuestionBody"
+      responses:
+        "201":
+          description: Question created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Question"
+  /questions/parse-image:
+    post:
+      operationId: parseQuestionImage
+      tags: [questions]
+      summary: Parse a question from an uploaded image using AI
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ParseImageBody"
+      responses:
+        "200":
+          description: Parsed question data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Question"
+  /questions/{id}:
+    get:
+      operationId: getQuestion
+      tags: [questions]
+      summary: Get a single question
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Question details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Question"
+        "404":
+          description: Not found
+    delete:
+      operationId: deleteQuestion
+      tags: [questions]
+      summary: Delete a question
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+  /questions/{id}/check:
+    post:
+      operationId: checkAnswer
+      tags: [questions]
+      summary: Check if the selected answer is correct
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CheckAnswerBody"
+      responses:
+        "200":
+          description: Answer result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CheckAnswerResult"
+  /questions/{id}/explain:
+    post:
+      operationId: explainAnswers
+      tags: [questions]
+      summary: Get AI explanation for why each answer is right or wrong
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: AI explanation for each choice
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExplainResult"
+  /questions/stats:
+    get:
+      operationId: getQuestionStats
+      tags: [questions]
+      summary: Get study statistics
+      responses:
+        "200":
+          description: Study statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuestionStats"
 components:
   schemas:
     HealthStatus:
@@ -33,4 +173,140 @@ components:
           type: string
       required:
         - status
-
+    Choice:
+      type: object
+      properties:
+        id:
+          type: integer
+        questionId:
+          type: integer
+        label:
+          type: string
+        text:
+          type: string
+        isCorrect:
+          type: boolean
+      required:
+        - id
+        - questionId
+        - label
+        - text
+        - isCorrect
+    Question:
+      type: object
+      properties:
+        id:
+          type: integer
+        questionText:
+          type: string
+        choices:
+          type: array
+          items:
+            $ref: "#/components/schemas/Choice"
+        answered:
+          type: boolean
+        answeredCorrectly:
+          type: boolean
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - questionText
+        - choices
+        - answered
+        - createdAt
+    CreateQuestionBody:
+      type: object
+      properties:
+        questionText:
+          type: string
+        choices:
+          type: array
+          items:
+            type: object
+            properties:
+              label:
+                type: string
+              text:
+                type: string
+              isCorrect:
+                type: boolean
+            required:
+              - label
+              - text
+              - isCorrect
+      required:
+        - questionText
+        - choices
+    ParseImageBody:
+      type: object
+      properties:
+        imageBase64:
+          type: string
+          description: Base64 encoded image data
+      required:
+        - imageBase64
+    CheckAnswerBody:
+      type: object
+      properties:
+        choiceId:
+          type: integer
+      required:
+        - choiceId
+    CheckAnswerResult:
+      type: object
+      properties:
+        correct:
+          type: boolean
+        correctChoiceId:
+          type: integer
+        selectedChoiceId:
+          type: integer
+      required:
+        - correct
+        - correctChoiceId
+        - selectedChoiceId
+    ExplainResult:
+      type: object
+      properties:
+        explanations:
+          type: array
+          items:
+            type: object
+            properties:
+              choiceId:
+                type: integer
+              label:
+                type: string
+              isCorrect:
+                type: boolean
+              explanation:
+                type: string
+            required:
+              - choiceId
+              - label
+              - isCorrect
+              - explanation
+      required:
+        - explanations
+    QuestionStats:
+      type: object
+      properties:
+        totalQuestions:
+          type: integer
+        answeredQuestions:
+          type: integer
+        correctAnswers:
+          type: integer
+        incorrectAnswers:
+          type: integer
+        accuracyPercent:
+          type: number
+      required:
+        - totalQuestions
+        - answeredQuestions
+        - correctAnswers
+        - incorrectAnswers
+        - accuracyPercent

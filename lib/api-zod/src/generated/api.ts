@@ -14,3 +14,139 @@ import * as zod from "zod";
 export const HealthCheckResponse = zod.object({
   status: zod.string(),
 });
+
+/**
+ * @summary List all questions
+ */
+export const ListQuestionsResponseItem = zod.object({
+  id: zod.number(),
+  questionText: zod.string(),
+  choices: zod.array(
+    zod.object({
+      id: zod.number(),
+      questionId: zod.number(),
+      label: zod.string(),
+      text: zod.string(),
+      isCorrect: zod.boolean(),
+    }),
+  ),
+  answered: zod.boolean(),
+  answeredCorrectly: zod.boolean().nullish(),
+  createdAt: zod.coerce.date(),
+});
+export const ListQuestionsResponse = zod.array(ListQuestionsResponseItem);
+
+/**
+ * @summary Create a question manually
+ */
+export const CreateQuestionBody = zod.object({
+  questionText: zod.string(),
+  choices: zod.array(
+    zod.object({
+      label: zod.string(),
+      text: zod.string(),
+      isCorrect: zod.boolean(),
+    }),
+  ),
+});
+
+/**
+ * @summary Parse a question from an uploaded image using AI
+ */
+export const ParseQuestionImageBody = zod.object({
+  imageBase64: zod.string().describe("Base64 encoded image data"),
+});
+
+export const ParseQuestionImageResponse = zod.object({
+  id: zod.number(),
+  questionText: zod.string(),
+  choices: zod.array(
+    zod.object({
+      id: zod.number(),
+      questionId: zod.number(),
+      label: zod.string(),
+      text: zod.string(),
+      isCorrect: zod.boolean(),
+    }),
+  ),
+  answered: zod.boolean(),
+  answeredCorrectly: zod.boolean().nullish(),
+  createdAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Get a single question
+ */
+export const GetQuestionParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GetQuestionResponse = zod.object({
+  id: zod.number(),
+  questionText: zod.string(),
+  choices: zod.array(
+    zod.object({
+      id: zod.number(),
+      questionId: zod.number(),
+      label: zod.string(),
+      text: zod.string(),
+      isCorrect: zod.boolean(),
+    }),
+  ),
+  answered: zod.boolean(),
+  answeredCorrectly: zod.boolean().nullish(),
+  createdAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Delete a question
+ */
+export const DeleteQuestionParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+/**
+ * @summary Check if the selected answer is correct
+ */
+export const CheckAnswerParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const CheckAnswerBody = zod.object({
+  choiceId: zod.number(),
+});
+
+export const CheckAnswerResponse = zod.object({
+  correct: zod.boolean(),
+  correctChoiceId: zod.number(),
+  selectedChoiceId: zod.number(),
+});
+
+/**
+ * @summary Get AI explanation for why each answer is right or wrong
+ */
+export const ExplainAnswersParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const ExplainAnswersResponse = zod.object({
+  explanations: zod.array(
+    zod.object({
+      choiceId: zod.number(),
+      label: zod.string(),
+      isCorrect: zod.boolean(),
+      explanation: zod.string(),
+    }),
+  ),
+});
+
+/**
+ * @summary Get study statistics
+ */
+export const GetQuestionStatsResponse = zod.object({
+  totalQuestions: zod.number(),
+  answeredQuestions: zod.number(),
+  correctAnswers: zod.number(),
+  incorrectAnswers: zod.number(),
+  accuracyPercent: zod.number(),
+});

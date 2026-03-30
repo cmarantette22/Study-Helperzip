@@ -8,3 +8,65 @@
 export interface HealthStatus {
   status: string;
 }
+
+export interface Choice {
+  id: number;
+  questionId: number;
+  label: string;
+  text: string;
+  isCorrect: boolean;
+}
+
+export interface Question {
+  id: number;
+  questionText: string;
+  choices: Choice[];
+  answered: boolean;
+  answeredCorrectly?: boolean | null;
+  createdAt: string;
+}
+
+export type CreateQuestionBodyChoicesItem = {
+  label: string;
+  text: string;
+  isCorrect: boolean;
+};
+
+export interface CreateQuestionBody {
+  questionText: string;
+  choices: CreateQuestionBodyChoicesItem[];
+}
+
+export interface ParseImageBody {
+  /** Base64 encoded image data */
+  imageBase64: string;
+}
+
+export interface CheckAnswerBody {
+  choiceId: number;
+}
+
+export interface CheckAnswerResult {
+  correct: boolean;
+  correctChoiceId: number;
+  selectedChoiceId: number;
+}
+
+export type ExplainResultExplanationsItem = {
+  choiceId: number;
+  label: string;
+  isCorrect: boolean;
+  explanation: string;
+};
+
+export interface ExplainResult {
+  explanations: ExplainResultExplanationsItem[];
+}
+
+export interface QuestionStats {
+  totalQuestions: number;
+  answeredQuestions: number;
+  correctAnswers: number;
+  incorrectAnswers: number;
+  accuracyPercent: number;
+}

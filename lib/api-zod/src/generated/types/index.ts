@@ -6,4 +6,14 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from "./checkAnswerBody";
+export * from "./checkAnswerResult";
+export * from "./choice";
+export * from "./createQuestionBody";
+export * from "./createQuestionBodyChoicesItem";
+export * from "./explainResult";
+export * from "./explainResultExplanationsItem";
 export * from "./healthStatus";
+export * from "./parseImageBody";
+export * from "./question";
+export * from "./questionStats";
