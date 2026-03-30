@@ -53,12 +53,16 @@ A study app for multiple-choice questions with AI-powered features:
 - **Deep dive**: Get structured analysis of underlying principles and concepts
 - **Follow-up chat**: Multi-turn conversation with AI tutor about any question
 - **Study stats**: Track total questions, accuracy percentage, and questions needing review (per-project and overall)
+- **Course outline upload**: Upload a course outline (text or PDF), AI breaks it into study sections
+- **Section deep dive**: Get structured analysis of principles for each outline section
+- **Section follow-up chat**: Multi-turn conversation with AI tutor about any outline section
 
 ### Database Schema
 
 - **projects**: id, name, created_at
 - **questions**: id, project_id (FK → projects, cascade delete), question_text, answered, answered_correctly, created_at
 - **choices**: id, question_id (FK → questions, cascade delete), label, text, is_correct
+- **outline_sections**: id, project_id (FK → projects, cascade delete), title, content, order_index, created_at
 
 ### API Endpoints (under /api)
 
@@ -70,6 +74,12 @@ Projects:
 - `DELETE /projects/:id` — delete project and all its questions
 - `GET /projects/:id/questions?filter=all|correct|needs_review|unanswered` — list filtered questions
 - `POST /projects/:id/reset?filter=all|correct|needs_review` — reset answers for filtered questions
+- `GET /projects/:id/outline` — list outline sections
+- `POST /projects/:id/outline` — upload outline (text or PDF), AI parses into sections
+- `DELETE /projects/:id/outline` — delete all outline sections
+- `DELETE /projects/:id/outline/:sectionId` — delete a single section
+- `POST /projects/:id/outline/:sectionId/deep-explain` — deep dive into section principles
+- `POST /projects/:id/outline/:sectionId/chat` — follow-up chat about a section
 
 Questions:
 - `GET /questions` — list all questions with choices
