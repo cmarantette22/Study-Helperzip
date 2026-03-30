@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { questionsTable, choicesTable } from "@workspace/db/schema";
-import { eq, sql, count } from "drizzle-orm";
+import { eq, sql, count, and } from "drizzle-orm";
 import { openai } from "@workspace/integrations-openai-ai-server";
 import {
   CreateQuestionBody,
@@ -42,7 +42,7 @@ router.post("/questions", async (req, res) => {
 
   const [question] = await db
     .insert(questionsTable)
-    .values({ questionText: body.questionText })
+    .values({ questionText: body.questionText, projectId: body.projectId ?? null })
     .returning();
 
   const choiceValues = body.choices.map((c: { label: string; text: string; isCorrect: boolean }) => ({
@@ -119,7 +119,7 @@ Important: Return ONLY the JSON, no markdown code fences or other text.`,
 
   const [question] = await db
     .insert(questionsTable)
-    .values({ questionText: parsed.questionText })
+    .values({ questionText: parsed.questionText, projectId: body.projectId ?? null })
     .returning();
 
   const choiceValues = parsed.choices.map((c) => ({
@@ -220,7 +220,7 @@ Important rules:
   for (const q of parsed.questions) {
     const [question] = await db
       .insert(questionsTable)
-      .values({ questionText: q.questionText })
+      .values({ questionText: q.questionText, projectId: body.projectId ?? null })
       .returning();
 
     const choiceValues = q.choices.map((c) => ({
@@ -241,16 +241,21 @@ Important rules:
   res.json({ questions: savedQuestions, totalParsed: savedQuestions.length });
 });
 
-router.get("/questions/stats", async (_req, res) => {
-  const totalResult = await db.select({ value: count() }).from(questionsTable);
+router.get("/questions/stats", async (req, res) => {
+  const projectIdParam = req.query.projectId as string | undefined;
+  const projectId = projectIdParam ? parseInt(projectIdParam, 10) : null;
+
+  const baseCondition = projectId ? eq(questionsTable.projectId, projectId) : undefined;
+
+  const totalResult = await db.select({ value: count() }).from(questionsTable).where(baseCondition);
   const answeredResult = await db
     .select({ value: count() })
     .from(questionsTable)
-    .where(eq(questionsTable.answered, true));
+    .where(baseCondition ? and(baseCondition, eq(questionsTable.answered, true)) : eq(questionsTable.answered, true));
   const correctResult = await db
     .select({ value: count() })
     .from(questionsTable)
-    .where(eq(questionsTable.answeredCorrectly, true));
+    .where(baseCondition ? and(baseCondition, eq(questionsTable.answeredCorrectly, true)) : eq(questionsTable.answeredCorrectly, true));
 
   const total = totalResult[0]?.value ?? 0;
   const answered = answeredResult[0]?.value ?? 0;

@@ -10,6 +10,8 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: projects
+    description: Project management
   - name: questions
     description: Question management
 paths:
@@ -26,6 +28,147 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /projects:
+    get:
+      operationId: listProjects
+      tags: [projects]
+      summary: List all projects
+      responses:
+        "200":
+          description: List of projects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Project"
+    post:
+      operationId: createProject
+      tags: [projects]
+      summary: Create a new project
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateProjectBody"
+      responses:
+        "201":
+          description: Project created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+  /projects/{id}:
+    get:
+      operationId: getProject
+      tags: [projects]
+      summary: Get a single project with stats
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Project details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectWithStats"
+        "404":
+          description: Not found
+    put:
+      operationId: updateProject
+      tags: [projects]
+      summary: Rename a project
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateProjectBody"
+      responses:
+        "200":
+          description: Project updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+        "404":
+          description: Not found
+    delete:
+      operationId: deleteProject
+      tags: [projects]
+      summary: Delete a project and all its questions
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+  /projects/{id}/questions:
+    get:
+      operationId: listProjectQuestions
+      tags: [projects]
+      summary: List questions in a project with optional filter
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: filter
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [all, correct, needs_review, unanswered]
+      responses:
+        "200":
+          description: List of questions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Question"
+  /projects/{id}/reset:
+    post:
+      operationId: resetProjectAnswers
+      tags: [projects]
+      summary: Reset answers for questions in a project (optionally filtered)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: filter
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [all, correct, needs_review]
+      responses:
+        "200":
+          description: Reset result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResetResult"
   /questions:
     get:
       operationId: listQuestions
@@ -217,6 +360,12 @@ paths:
       operationId: getQuestionStats
       tags: [questions]
       summary: Get study statistics
+      parameters:
+        - name: projectId
+          in: query
+          required: false
+          schema:
+            type: integer
       responses:
         "200":
           description: Study statistics
@@ -233,6 +382,63 @@ components:
           type: string
       required:
         - status
+    Project:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - createdAt
+    ProjectWithStats:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        totalQuestions:
+          type: integer
+        answeredQuestions:
+          type: integer
+        correctAnswers:
+          type: integer
+        incorrectAnswers:
+          type: integer
+        accuracyPercent:
+          type: number
+      required:
+        - id
+        - name
+        - createdAt
+        - totalQuestions
+        - answeredQuestions
+        - correctAnswers
+        - incorrectAnswers
+        - accuracyPercent
+    CreateProjectBody:
+      type: object
+      properties:
+        name:
+          type: string
+      required:
+        - name
+    ResetResult:
+      type: object
+      properties:
+        resetCount:
+          type: integer
+      required:
+        - resetCount
     Choice:
       type: object
       properties:
@@ -257,6 +463,9 @@ components:
       properties:
         id:
           type: integer
+        projectId:
+          type: integer
+          nullable: true
         questionText:
           type: string
         choices:
@@ -282,6 +491,8 @@ components:
       properties:
         questionText:
           type: string
+        projectId:
+          type: integer
         choices:
           type: array
           items:
@@ -306,6 +517,8 @@ components:
         pdfBase64:
           type: string
           description: Base64 encoded PDF data
+        projectId:
+          type: integer
       required:
         - pdfBase64
     ParsePdfResult:
@@ -326,6 +539,8 @@ components:
         imageBase64:
           type: string
           description: Base64 encoded image data
+        projectId:
+          type: integer
       required:
         - imageBase64
     CheckAnswerBody:

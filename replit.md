@@ -44,28 +44,45 @@ artifacts-monorepo/
 
 A study app for multiple-choice questions with AI-powered features:
 
+- **Project folders**: Organize questions into named projects (e.g., "Econ 202 Midterm 2")
 - **Upload images**: Take a screenshot of a multiple-choice question, upload it, and AI (GPT-5.2 with vision) parses the question text and answer choices
 - **Upload PDFs**: Upload a PDF document with multiple-choice questions and an answer key; AI extracts all questions and marks correct answers automatically (uses `unpdf` for text extraction)
 - **Quiz mode**: Answer questions and get instant correct/incorrect feedback
+- **Filter & reset**: Filter questions by All, Unanswered, Correct, Needs Review; reset answers for filtered sets to re-study
 - **AI explanations**: Request AI to explain why each answer choice is correct or incorrect
-- **Study stats**: Track total questions, accuracy percentage, and questions needing review
+- **Deep dive**: Get structured analysis of underlying principles and concepts
+- **Follow-up chat**: Multi-turn conversation with AI tutor about any question
+- **Study stats**: Track total questions, accuracy percentage, and questions needing review (per-project and overall)
 
 ### Database Schema
 
-- **questions**: id, question_text, answered, answered_correctly, created_at
-- **choices**: id, question_id, label, text, is_correct (cascading delete from questions)
+- **projects**: id, name, created_at
+- **questions**: id, project_id (FK → projects, cascade delete), question_text, answered, answered_correctly, created_at
+- **choices**: id, question_id (FK → questions, cascade delete), label, text, is_correct
 
 ### API Endpoints (under /api)
 
+Projects:
+- `GET /projects` — list all projects
+- `POST /projects` — create a new project
+- `GET /projects/:id` — get project with stats
+- `PUT /projects/:id` — rename a project
+- `DELETE /projects/:id` — delete project and all its questions
+- `GET /projects/:id/questions?filter=all|correct|needs_review|unanswered` — list filtered questions
+- `POST /projects/:id/reset?filter=all|correct|needs_review` — reset answers for filtered questions
+
+Questions:
 - `GET /questions` — list all questions with choices
-- `POST /questions` — create a question manually
-- `POST /questions/parse-image` — upload base64 image, AI parses it into a question
-- `POST /questions/parse-pdf` — upload base64 PDF, AI extracts all questions with answer key matching
+- `POST /questions` — create a question manually (optional projectId)
+- `POST /questions/parse-image` — upload base64 image, AI parses it (optional projectId)
+- `POST /questions/parse-pdf` — upload base64 PDF, AI extracts all questions (optional projectId)
 - `GET /questions/:id` — get a single question
 - `DELETE /questions/:id` — delete a question
 - `POST /questions/:id/check` — check if selected answer is correct
 - `POST /questions/:id/explain` — get AI explanations for all choices
-- `GET /questions/stats` — get study statistics
+- `POST /questions/:id/deep-explain` — get structured principle analysis
+- `POST /questions/:id/chat` — multi-turn follow-up conversation
+- `GET /questions/stats?projectId=N` — get study statistics (optional project filter)
 
 ## TypeScript & Composite Projects
 
@@ -96,7 +113,7 @@ React + Vite frontend with warm study-desk themed UI.
 
 ### `lib/db` (`@workspace/db`)
 
-Database layer with Drizzle ORM. Tables: questions, choices.
+Database layer with Drizzle ORM. Tables: projects, questions, choices.
 
 - `pnpm --filter @workspace/db run push` — push schema to database
 

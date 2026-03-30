@@ -9,4 +9,5 @@
 export interface ParsePdfBody {
   /** Base64 encoded PDF data */
   pdfBase64: string;
+  projectId?: number;
 }

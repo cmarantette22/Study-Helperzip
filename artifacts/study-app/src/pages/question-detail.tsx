@@ -161,7 +161,7 @@ export default function QuestionDetail() {
     <div className="min-h-screen bg-background pb-24 font-sans">
       <div className="bg-background/80 backdrop-blur-md border-b border-border py-4 px-6 sticky top-0 z-10">
         <div className="max-w-3xl mx-auto flex items-center justify-between">
-          <Link href="/" className="inline-flex items-center text-muted-foreground hover:text-primary transition-colors font-medium">
+          <Link href={question?.projectId ? `/project/${question.projectId}` : "/"} className="inline-flex items-center text-muted-foreground hover:text-primary transition-colors font-medium">
             <ArrowLeft className="w-5 h-5 mr-2" />
             Back to Deck
           </Link>

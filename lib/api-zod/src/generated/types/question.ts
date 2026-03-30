@@ -9,6 +9,7 @@ import type { Choice } from "./choice";
 
 export interface Question {
   id: number;
+  projectId?: number | null;
   questionText: string;
   choices: Choice[];
   answered: boolean;

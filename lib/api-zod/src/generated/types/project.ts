@@ -6,8 +6,8 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface ParseImageBody {
-  /** Base64 encoded image data */
-  imageBase64: string;
-  projectId?: number;
+export interface Project {
+  id: number;
+  name: string;
+  createdAt: Date;
 }

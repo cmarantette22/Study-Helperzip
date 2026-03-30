@@ -9,6 +9,31 @@ export interface HealthStatus {
   status: string;
 }
 
+export interface Project {
+  id: number;
+  name: string;
+  createdAt: string;
+}
+
+export interface ProjectWithStats {
+  id: number;
+  name: string;
+  createdAt: string;
+  totalQuestions: number;
+  answeredQuestions: number;
+  correctAnswers: number;
+  incorrectAnswers: number;
+  accuracyPercent: number;
+}
+
+export interface CreateProjectBody {
+  name: string;
+}
+
+export interface ResetResult {
+  resetCount: number;
+}
+
 export interface Choice {
   id: number;
   questionId: number;
@@ -19,6 +44,7 @@ export interface Choice {
 
 export interface Question {
   id: number;
+  projectId?: number | null;
   questionText: string;
   choices: Choice[];
   answered: boolean;
@@ -34,12 +60,14 @@ export type CreateQuestionBodyChoicesItem = {
 
 export interface CreateQuestionBody {
   questionText: string;
+  projectId?: number;
   choices: CreateQuestionBodyChoicesItem[];
 }
 
 export interface ParsePdfBody {
   /** Base64 encoded PDF data */
   pdfBase64: string;
+  projectId?: number;
 }
 
 export interface ParsePdfResult {
@@ -50,6 +78,7 @@ export interface ParsePdfResult {
 export interface ParseImageBody {
   /** Base64 encoded image data */
   imageBase64: string;
+  projectId?: number;
 }
 
 export interface CheckAnswerBody {
@@ -113,3 +142,34 @@ export interface QuestionStats {
   incorrectAnswers: number;
   accuracyPercent: number;
 }
+
+export type ListProjectQuestionsParams = {
+  filter?: ListProjectQuestionsFilter;
+};
+
+export type ListProjectQuestionsFilter =
+  (typeof ListProjectQuestionsFilter)[keyof typeof ListProjectQuestionsFilter];
+
+export const ListProjectQuestionsFilter = {
+  all: "all",
+  correct: "correct",
+  needs_review: "needs_review",
+  unanswered: "unanswered",
+} as const;
+
+export type ResetProjectAnswersParams = {
+  filter?: ResetProjectAnswersFilter;
+};
+
+export type ResetProjectAnswersFilter =
+  (typeof ResetProjectAnswersFilter)[keyof typeof ResetProjectAnswersFilter];
+
+export const ResetProjectAnswersFilter = {
+  all: "all",
+  correct: "correct",
+  needs_review: "needs_review",
+} as const;
+
+export type GetQuestionStatsParams = {
+  projectId?: number;
+};

@@ -16,10 +16,117 @@ export const HealthCheckResponse = zod.object({
 });
 
 /**
+ * @summary List all projects
+ */
+export const ListProjectsResponseItem = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  createdAt: zod.coerce.date(),
+});
+export const ListProjectsResponse = zod.array(ListProjectsResponseItem);
+
+/**
+ * @summary Create a new project
+ */
+export const CreateProjectBody = zod.object({
+  name: zod.string(),
+});
+
+/**
+ * @summary Get a single project with stats
+ */
+export const GetProjectParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GetProjectResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  createdAt: zod.coerce.date(),
+  totalQuestions: zod.number(),
+  answeredQuestions: zod.number(),
+  correctAnswers: zod.number(),
+  incorrectAnswers: zod.number(),
+  accuracyPercent: zod.number(),
+});
+
+/**
+ * @summary Rename a project
+ */
+export const UpdateProjectParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const UpdateProjectBody = zod.object({
+  name: zod.string(),
+});
+
+export const UpdateProjectResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  createdAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Delete a project and all its questions
+ */
+export const DeleteProjectParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+/**
+ * @summary List questions in a project with optional filter
+ */
+export const ListProjectQuestionsParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const ListProjectQuestionsQueryParams = zod.object({
+  filter: zod.enum(["all", "correct", "needs_review", "unanswered"]).optional(),
+});
+
+export const ListProjectQuestionsResponseItem = zod.object({
+  id: zod.number(),
+  projectId: zod.number().nullish(),
+  questionText: zod.string(),
+  choices: zod.array(
+    zod.object({
+      id: zod.number(),
+      questionId: zod.number(),
+      label: zod.string(),
+      text: zod.string(),
+      isCorrect: zod.boolean(),
+    }),
+  ),
+  answered: zod.boolean(),
+  answeredCorrectly: zod.boolean().nullish(),
+  createdAt: zod.coerce.date(),
+});
+export const ListProjectQuestionsResponse = zod.array(
+  ListProjectQuestionsResponseItem,
+);
+
+/**
+ * @summary Reset answers for questions in a project (optionally filtered)
+ */
+export const ResetProjectAnswersParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const ResetProjectAnswersQueryParams = zod.object({
+  filter: zod.enum(["all", "correct", "needs_review"]).optional(),
+});
+
+export const ResetProjectAnswersResponse = zod.object({
+  resetCount: zod.number(),
+});
+
+/**
  * @summary List all questions
  */
 export const ListQuestionsResponseItem = zod.object({
   id: zod.number(),
+  projectId: zod.number().nullish(),
   questionText: zod.string(),
   choices: zod.array(
     zod.object({
@@ -41,6 +148,7 @@ export const ListQuestionsResponse = zod.array(ListQuestionsResponseItem);
  */
 export const CreateQuestionBody = zod.object({
   questionText: zod.string(),
+  projectId: zod.number().optional(),
   choices: zod.array(
     zod.object({
       label: zod.string(),
@@ -55,12 +163,14 @@ export const CreateQuestionBody = zod.object({
  */
 export const ParsePdfQuestionsBody = zod.object({
   pdfBase64: zod.string().describe("Base64 encoded PDF data"),
+  projectId: zod.number().optional(),
 });
 
 export const ParsePdfQuestionsResponse = zod.object({
   questions: zod.array(
     zod.object({
       id: zod.number(),
+      projectId: zod.number().nullish(),
       questionText: zod.string(),
       choices: zod.array(
         zod.object({
@@ -84,10 +194,12 @@ export const ParsePdfQuestionsResponse = zod.object({
  */
 export const ParseQuestionImageBody = zod.object({
   imageBase64: zod.string().describe("Base64 encoded image data"),
+  projectId: zod.number().optional(),
 });
 
 export const ParseQuestionImageResponse = zod.object({
   id: zod.number(),
+  projectId: zod.number().nullish(),
   questionText: zod.string(),
   choices: zod.array(
     zod.object({
@@ -112,6 +224,7 @@ export const GetQuestionParams = zod.object({
 
 export const GetQuestionResponse = zod.object({
   id: zod.number(),
+  projectId: zod.number().nullish(),
   questionText: zod.string(),
   choices: zod.array(
     zod.object({
@@ -213,6 +326,10 @@ export const ChatAboutQuestionResponse = zod.object({
 /**
  * @summary Get study statistics
  */
+export const GetQuestionStatsQueryParams = zod.object({
+  projectId: zod.coerce.number().optional(),
+});
+
 export const GetQuestionStatsResponse = zod.object({
   totalQuestions: zod.number(),
   answeredQuestions: zod.number(),
