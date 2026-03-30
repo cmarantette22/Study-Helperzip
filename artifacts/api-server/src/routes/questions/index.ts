@@ -41,7 +41,7 @@ router.get("/questions", async (_req, res) => {
 router.post("/questions", async (req, res) => {
   const body = CreateQuestionBody.parse(req.body);
 
-  const multiSelect = body.multiSelect ?? false;
+  const multiSelect = body.multiSelect ?? /check all that apply|select all that apply/i.test(body.questionText);
   const [question] = await db
     .insert(questionsTable)
     .values({ questionText: body.questionText, projectId: body.projectId ?? null, multiSelect })
@@ -317,13 +317,10 @@ router.put("/questions/:id", async (req, res) => {
       return;
     }
 
-    const updateData: Record<string, any> = { questionText: body.questionText };
-    if (body.multiSelect !== undefined) {
-      updateData.multiSelect = body.multiSelect;
-    }
+    const multiSelect = body.multiSelect ?? /check all that apply|select all that apply/i.test(body.questionText);
     await db
       .update(questionsTable)
-      .set(updateData)
+      .set({ questionText: body.questionText, multiSelect })
       .where(eq(questionsTable.id, id));
 
     await db.delete(choicesTable).where(eq(choicesTable.questionId, id));
