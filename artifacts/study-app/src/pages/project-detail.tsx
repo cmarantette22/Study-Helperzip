@@ -10,7 +10,6 @@ import {
   useListOutlineSections,
   useUploadOutline,
   useDeleteOutlineSection,
-  useDeleteAllOutlineSections,
   getListProjectQuestionsQueryKey,
   getGetProjectQueryKey,
   getGetQuestionStatsQueryKey,
@@ -154,15 +153,6 @@ export default function ProjectDetail() {
         queryClient.invalidateQueries({ queryKey: getListOutlineSectionsQueryKey(projectId) });
         toast({ title: "Section deleted" });
         setDeleteDialogSectionId(null);
-      },
-    },
-  });
-
-  const deleteAllSectionsMutation = useDeleteAllOutlineSections({
-    mutation: {
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: getListOutlineSectionsQueryKey(projectId) });
-        toast({ title: "All outline sections deleted" });
       },
     },
   });
@@ -371,18 +361,6 @@ export default function ProjectDetail() {
                 Course Outline
               </h2>
               <div className="flex gap-2">
-                {outlineSections && outlineSections.length > 0 && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => deleteAllSectionsMutation.mutate({ id: projectId })}
-                    disabled={deleteAllSectionsMutation.isPending}
-                    className="text-red-600 border-red-200 hover:bg-red-50"
-                  >
-                    <Trash2 className="w-4 h-4 mr-1" />
-                    Clear All
-                  </Button>
-                )}
                 <Dialog open={isOutlineDialogOpen} onOpenChange={setIsOutlineDialogOpen}>
                   <DialogTrigger asChild>
                     <Button size="sm" className="shadow-lg rounded-lg h-9 px-4">
