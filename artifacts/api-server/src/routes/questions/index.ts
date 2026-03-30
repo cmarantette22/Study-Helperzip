@@ -7,6 +7,7 @@ import {
   CreateQuestionBody,
   ParseQuestionImageBody,
   CheckAnswerBody,
+  ChatAboutQuestionBody,
 } from "@workspace/api-zod";
 
 const router: IRouter = Router();
@@ -303,6 +304,144 @@ Important: Return ONLY the JSON, no markdown code fences or other text.`,
   }));
 
   res.json({ explanations });
+});
+
+router.post("/questions/:id/deep-explain", async (req, res) => {
+  const id = parseInt(req.params.id, 10);
+
+  const [question] = await db
+    .select()
+    .from(questionsTable)
+    .where(eq(questionsTable.id, id));
+
+  if (!question) {
+    res.status(404).json({ error: "Question not found" });
+    return;
+  }
+
+  const choices = await db
+    .select()
+    .from(choicesTable)
+    .where(eq(choicesTable.questionId, id));
+
+  const choicesText = choices
+    .map((c) => `${c.label}. ${c.text} (${c.isCorrect ? "CORRECT" : "INCORRECT"})`)
+    .join("\n");
+
+  const response = await openai.chat.completions.create({
+    model: "gpt-5.2",
+    max_completion_tokens: 8192,
+    messages: [
+      {
+        role: "system",
+        content: `You are an expert tutor and subject matter expert. Given a multiple-choice question and its answer choices, provide an in-depth analysis of the primary principles, theories, and concepts that the question tests. Go beyond surface-level explanations — explain the foundational knowledge a student needs to understand this topic deeply.
+
+Return your response as valid JSON with this exact format:
+{
+  "principles": [
+    {
+      "name": "Name of the principle or concept",
+      "description": "A thorough explanation of this principle — what it is, why it matters, and how it works in general",
+      "howItApplies": "How this specific principle applies to the question at hand, connecting the theory to the specific scenario"
+    }
+  ],
+  "summary": "A 2-3 sentence synthesis tying all the principles together and explaining why the correct answer is correct at a deeper level"
+}
+
+Important: Return ONLY the JSON, no markdown code fences or other text. Include 2-4 key principles.`,
+      },
+      {
+        role: "user",
+        content: `Question: ${question.questionText}\n\nChoices:\n${choicesText}`,
+      },
+    ],
+  });
+
+  const content = response.choices[0]?.message?.content;
+  if (!content) {
+    res.status(500).json({ error: "Failed to generate deep explanation" });
+    return;
+  }
+
+  let parsed: { principles: { name: string; description: string; howItApplies: string }[]; summary: string };
+  try {
+    const cleaned = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+    parsed = JSON.parse(cleaned);
+  } catch {
+    res.status(500).json({ error: "Failed to parse AI response" });
+    return;
+  }
+
+  res.json(parsed);
+});
+
+router.post("/questions/:id/chat", async (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  const body = ChatAboutQuestionBody.parse(req.body);
+
+  const [question] = await db
+    .select()
+    .from(questionsTable)
+    .where(eq(questionsTable.id, id));
+
+  if (!question) {
+    res.status(404).json({ error: "Question not found" });
+    return;
+  }
+
+  const choices = await db
+    .select()
+    .from(choicesTable)
+    .where(eq(choicesTable.questionId, id));
+
+  const choicesText = choices
+    .map((c) => `${c.label}. ${c.text} (${c.isCorrect ? "CORRECT" : "INCORRECT"})`)
+    .join("\n");
+
+  const conversationMessages: { role: "user" | "assistant"; content: string }[] =
+    (body.conversationHistory ?? []).map((m) => ({
+      role: m.role as "user" | "assistant",
+      content: m.content,
+    }));
+
+  const response = await openai.chat.completions.create({
+    model: "gpt-5.2",
+    max_completion_tokens: 8192,
+    messages: [
+      {
+        role: "system",
+        content: `You are a patient, encouraging expert tutor helping a student understand a specific multiple-choice question. Here is the question context:
+
+Question: ${question.questionText}
+
+Choices:
+${choicesText}
+
+The student may ask follow-up questions, express confusion, or ask you to explain things differently. Your job is to:
+- Answer their specific question or concern
+- Use analogies, examples, and simple language when helpful
+- Break down complex ideas into digestible pieces
+- Be encouraging and supportive
+- Stay focused on the question and its underlying concepts
+- If they say they don't understand, try explaining from a different angle
+
+Keep your responses clear and focused. Use plain text, not markdown formatting.`,
+      },
+      ...conversationMessages,
+      {
+        role: "user",
+        content: body.message,
+      },
+    ],
+  });
+
+  const reply = response.choices[0]?.message?.content;
+  if (!reply) {
+    res.status(500).json({ error: "Failed to generate response" });
+    return;
+  }
+
+  res.json({ reply });
 });
 
 export default router;

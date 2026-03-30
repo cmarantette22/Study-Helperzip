@@ -152,6 +152,48 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ExplainResult"
+  /questions/{id}/deep-explain:
+    post:
+      operationId: deepExplainQuestion
+      tags: [questions]
+      summary: Get in-depth explanation of the primary principles at play
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deep explanation of underlying principles
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeepExplainResult"
+  /questions/{id}/chat:
+    post:
+      operationId: chatAboutQuestion
+      tags: [questions]
+      summary: Follow-up conversation about a question
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChatMessageBody"
+      responses:
+        "200":
+          description: AI response to the follow-up message
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChatResponse"
   /questions/stats:
     get:
       operationId: getQuestionStats
@@ -291,6 +333,56 @@ components:
               - explanation
       required:
         - explanations
+    DeepExplainResult:
+      type: object
+      properties:
+        principles:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              description:
+                type: string
+              howItApplies:
+                type: string
+            required:
+              - name
+              - description
+              - howItApplies
+        summary:
+          type: string
+      required:
+        - principles
+        - summary
+    ChatMessageBody:
+      type: object
+      properties:
+        message:
+          type: string
+        conversationHistory:
+          type: array
+          items:
+            type: object
+            properties:
+              role:
+                type: string
+                enum: [user, assistant]
+              content:
+                type: string
+            required:
+              - role
+              - content
+      required:
+        - message
+    ChatResponse:
+      type: object
+      properties:
+        reply:
+          type: string
+      required:
+        - reply
     QuestionStats:
       type: object
       properties:

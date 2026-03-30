@@ -17,9 +17,12 @@ import type {
 } from "@tanstack/react-query";
 
 import type {
+  ChatMessageBody,
+  ChatResponse,
   CheckAnswerBody,
   CheckAnswerResult,
   CreateQuestionBody,
+  DeepExplainResult,
   ExplainResult,
   HealthStatus,
   ParseImageBody,
@@ -699,6 +702,177 @@ export const useExplainAnswers = <
   TContext
 > => {
   return useMutation(getExplainAnswersMutationOptions(options));
+};
+
+/**
+ * @summary Get in-depth explanation of the primary principles at play
+ */
+export const getDeepExplainQuestionUrl = (id: number) => {
+  return `/api/questions/${id}/deep-explain`;
+};
+
+export const deepExplainQuestion = async (
+  id: number,
+  options?: RequestInit,
+): Promise<DeepExplainResult> => {
+  return customFetch<DeepExplainResult>(getDeepExplainQuestionUrl(id), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getDeepExplainQuestionMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deepExplainQuestion>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deepExplainQuestion>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["deepExplainQuestion"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deepExplainQuestion>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return deepExplainQuestion(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeepExplainQuestionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deepExplainQuestion>>
+>;
+
+export type DeepExplainQuestionMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Get in-depth explanation of the primary principles at play
+ */
+export const useDeepExplainQuestion = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deepExplainQuestion>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deepExplainQuestion>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getDeepExplainQuestionMutationOptions(options));
+};
+
+/**
+ * @summary Follow-up conversation about a question
+ */
+export const getChatAboutQuestionUrl = (id: number) => {
+  return `/api/questions/${id}/chat`;
+};
+
+export const chatAboutQuestion = async (
+  id: number,
+  chatMessageBody: ChatMessageBody,
+  options?: RequestInit,
+): Promise<ChatResponse> => {
+  return customFetch<ChatResponse>(getChatAboutQuestionUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(chatMessageBody),
+  });
+};
+
+export const getChatAboutQuestionMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof chatAboutQuestion>>,
+    TError,
+    { id: number; data: BodyType<ChatMessageBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof chatAboutQuestion>>,
+  TError,
+  { id: number; data: BodyType<ChatMessageBody> },
+  TContext
+> => {
+  const mutationKey = ["chatAboutQuestion"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof chatAboutQuestion>>,
+    { id: number; data: BodyType<ChatMessageBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return chatAboutQuestion(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ChatAboutQuestionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof chatAboutQuestion>>
+>;
+export type ChatAboutQuestionMutationBody = BodyType<ChatMessageBody>;
+export type ChatAboutQuestionMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Follow-up conversation about a question
+ */
+export const useChatAboutQuestion = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof chatAboutQuestion>>,
+    TError,
+    { id: number; data: BodyType<ChatMessageBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof chatAboutQuestion>>,
+  TError,
+  { id: number; data: BodyType<ChatMessageBody> },
+  TContext
+> => {
+  return useMutation(getChatAboutQuestionMutationOptions(options));
 };
 
 /**

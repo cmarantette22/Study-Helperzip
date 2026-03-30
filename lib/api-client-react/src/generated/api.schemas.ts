@@ -63,6 +63,39 @@ export interface ExplainResult {
   explanations: ExplainResultExplanationsItem[];
 }
 
+export type DeepExplainResultPrinciplesItem = {
+  name: string;
+  description: string;
+  howItApplies: string;
+};
+
+export interface DeepExplainResult {
+  principles: DeepExplainResultPrinciplesItem[];
+  summary: string;
+}
+
+export type ChatMessageBodyConversationHistoryItemRole =
+  (typeof ChatMessageBodyConversationHistoryItemRole)[keyof typeof ChatMessageBodyConversationHistoryItemRole];
+
+export const ChatMessageBodyConversationHistoryItemRole = {
+  user: "user",
+  assistant: "assistant",
+} as const;
+
+export type ChatMessageBodyConversationHistoryItem = {
+  role: ChatMessageBodyConversationHistoryItemRole;
+  content: string;
+};
+
+export interface ChatMessageBody {
+  message: string;
+  conversationHistory?: ChatMessageBodyConversationHistoryItem[];
+}
+
+export interface ChatResponse {
+  reply: string;
+}
+
 export interface QuestionStats {
   totalQuestions: number;
   answeredQuestions: number;

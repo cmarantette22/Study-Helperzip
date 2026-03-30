@@ -6,11 +6,17 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from "./chatMessageBody";
+export * from "./chatMessageBodyConversationHistoryItem";
+export * from "./chatMessageBodyConversationHistoryItemRole";
+export * from "./chatResponse";
 export * from "./checkAnswerBody";
 export * from "./checkAnswerResult";
 export * from "./choice";
 export * from "./createQuestionBody";
 export * from "./createQuestionBodyChoicesItem";
+export * from "./deepExplainResult";
+export * from "./deepExplainResultPrinciplesItem";
 export * from "./explainResult";
 export * from "./explainResultExplanationsItem";
 export * from "./healthStatus";

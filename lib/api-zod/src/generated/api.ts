@@ -141,6 +141,47 @@ export const ExplainAnswersResponse = zod.object({
 });
 
 /**
+ * @summary Get in-depth explanation of the primary principles at play
+ */
+export const DeepExplainQuestionParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const DeepExplainQuestionResponse = zod.object({
+  principles: zod.array(
+    zod.object({
+      name: zod.string(),
+      description: zod.string(),
+      howItApplies: zod.string(),
+    }),
+  ),
+  summary: zod.string(),
+});
+
+/**
+ * @summary Follow-up conversation about a question
+ */
+export const ChatAboutQuestionParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const ChatAboutQuestionBody = zod.object({
+  message: zod.string(),
+  conversationHistory: zod
+    .array(
+      zod.object({
+        role: zod.enum(["user", "assistant"]),
+        content: zod.string(),
+      }),
+    )
+    .optional(),
+});
+
+export const ChatAboutQuestionResponse = zod.object({
+  reply: zod.string(),
+});
+
+/**
  * @summary Get study statistics
  */
 export const GetQuestionStatsResponse = zod.object({
