@@ -8,6 +8,7 @@ import {
   useChatAboutQuestion,
   useDeleteQuestion,
   useUpdateQuestion,
+  useListProjectQuestions,
   getGetQuestionQueryKey,
   getListQuestionsQueryKey,
   getGetQuestionStatsQueryKey,
