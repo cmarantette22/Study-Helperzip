@@ -16,6 +16,10 @@ tags:
     description: Question management
   - name: outline
     description: Outline section management
+  - name: auth
+    description: Authentication
+  - name: admin
+    description: Admin user management
 paths:
   /healthz:
     get:
@@ -230,6 +234,36 @@ paths:
         "204":
           description: All sections deleted
   /projects/{id}/outline/{sectionId}:
+    put:
+      operationId: updateOutlineSection
+      tags: [outline]
+      summary: Update an outline section's title and content
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: sectionId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateOutlineSectionBody"
+      responses:
+        "200":
+          description: Updated section
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OutlineSection"
+        "404":
+          description: Not found
     delete:
       operationId: deleteOutlineSection
       tags: [outline]
@@ -393,6 +427,31 @@ paths:
                 $ref: "#/components/schemas/Question"
         "404":
           description: Not found
+    put:
+      operationId: updateQuestion
+      tags: [questions]
+      summary: Update a question's text and choices
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateQuestionBody"
+      responses:
+        "200":
+          description: Updated question
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Question"
+        "404":
+          description: Not found
     delete:
       operationId: deleteQuestion
       tags: [questions]
@@ -510,6 +569,125 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/QuestionStats"
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Login with email and password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginBody"
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthUser"
+        "401":
+          description: Invalid credentials
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current authenticated user
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthUser"
+        "401":
+          description: Not authenticated
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Logout
+      responses:
+        "200":
+          description: Logged out
+  /auth/change-password:
+    post:
+      operationId: changePassword
+      tags: [auth]
+      summary: Change password (required after temp password login)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChangePasswordBody"
+      responses:
+        "200":
+          description: Password changed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthUser"
+        "401":
+          description: Not authenticated
+        "400":
+          description: Invalid password
+  /admin/users:
+    get:
+      operationId: listUsers
+      tags: [admin]
+      summary: List all users (admin only)
+      responses:
+        "200":
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminUser"
+        "403":
+          description: Forbidden
+    post:
+      operationId: createUser
+      tags: [admin]
+      summary: Create a new user with temp password (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateUserBody"
+      responses:
+        "201":
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminUserWithPassword"
+        "403":
+          description: Forbidden
+        "409":
+          description: Email already exists
+  /admin/users/{id}:
+    delete:
+      operationId: deleteUser
+      tags: [admin]
+      summary: Delete a user (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: User deleted
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
 components:
   schemas:
     HealthStatus:
@@ -825,3 +1003,142 @@ components:
         - correctAnswers
         - incorrectAnswers
         - accuracyPercent
+    UpdateQuestionBody:
+      type: object
+      properties:
+        questionText:
+          type: string
+        choices:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+              label:
+                type: string
+              text:
+                type: string
+              isCorrect:
+                type: boolean
+            required:
+              - label
+              - text
+              - isCorrect
+      required:
+        - questionText
+        - choices
+    UpdateOutlineSectionBody:
+      type: object
+      properties:
+        title:
+          type: string
+        content:
+          type: string
+      required:
+        - title
+        - content
+    LoginBody:
+      type: object
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+      required:
+        - email
+        - password
+    ChangePasswordBody:
+      type: object
+      properties:
+        currentPassword:
+          type: string
+        newPassword:
+          type: string
+      required:
+        - currentPassword
+        - newPassword
+    AuthUser:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+          enum: [admin, user]
+        mustChangePassword:
+          type: boolean
+      required:
+        - id
+        - name
+        - email
+        - role
+        - mustChangePassword
+    CreateUserBody:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        password:
+          type: string
+      required:
+        - name
+        - email
+        - password
+    AdminUser:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+          enum: [admin, user]
+        mustChangePassword:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - email
+        - role
+        - mustChangePassword
+        - createdAt
+    AdminUserWithPassword:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+          enum: [admin, user]
+        mustChangePassword:
+          type: boolean
+        tempPassword:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - email
+        - role
+        - mustChangePassword
+        - tempPassword
+        - createdAt

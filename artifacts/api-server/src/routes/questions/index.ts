@@ -5,6 +5,7 @@ import { eq, sql, count, and } from "drizzle-orm";
 import { openai } from "@workspace/integrations-openai-ai-server";
 import {
   CreateQuestionBody,
+  UpdateQuestionBody,
   ParseQuestionImageBody,
   ParsePdfQuestionsBody,
   CheckAnswerBody,
@@ -290,6 +291,52 @@ router.get("/questions/:id", async (req, res) => {
     .where(eq(choicesTable.questionId, id));
 
   res.json({ ...question, choices });
+});
+
+router.put("/questions/:id", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const body = UpdateQuestionBody.parse(req.body);
+
+    const [question] = await db
+      .select()
+      .from(questionsTable)
+      .where(eq(questionsTable.id, id));
+
+    if (!question) {
+      res.status(404).json({ error: "Question not found" });
+      return;
+    }
+
+    await db
+      .update(questionsTable)
+      .set({ questionText: body.questionText })
+      .where(eq(questionsTable.id, id));
+
+    await db.delete(choicesTable).where(eq(choicesTable.questionId, id));
+
+    const choiceValues = body.choices.map((c: { label: string; text: string; isCorrect: boolean }) => ({
+      questionId: id,
+      label: c.label,
+      text: c.text,
+      isCorrect: c.isCorrect,
+    }));
+
+    const insertedChoices = await db
+      .insert(choicesTable)
+      .values(choiceValues)
+      .returning();
+
+    const [updated] = await db
+      .select()
+      .from(questionsTable)
+      .where(eq(questionsTable.id, id));
+
+    res.json({ ...updated, choices: insertedChoices });
+  } catch (err) {
+    console.error("Update question error:", err);
+    res.status(500).json({ error: "Failed to update question" });
+  }
 });
 
 router.delete("/questions/:id", async (req, res) => {

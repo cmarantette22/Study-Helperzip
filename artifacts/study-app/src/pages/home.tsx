@@ -11,17 +11,19 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { BookOpen, BrainCircuit, Loader2, ArrowRight, Target, ListChecks, Sparkles, Plus, FolderOpen, Trash2 } from "lucide-react";
+import { BookOpen, BrainCircuit, Loader2, ArrowRight, Target, ListChecks, Sparkles, Plus, FolderOpen, Trash2, LogOut, Shield } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { useAuth } from "@/lib/auth-context";
 
 export default function Home() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user, logout } = useAuth();
 
   const { data: stats, isLoading: isLoadingStats } = useGetQuestionStats();
   const { data: projects, isLoading: isLoadingProjects } = useListProjects();
@@ -71,7 +73,20 @@ export default function Home() {
     <div className="min-h-screen bg-background pb-24">
       <header className="bg-primary text-primary-foreground py-10 px-6 relative overflow-hidden">
         <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top_right,var(--tw-gradient-stops))] from-white via-transparent to-transparent pointer-events-none" />
-        <div className="max-w-4xl mx-auto flex flex-col md:flex-row gap-8 items-center justify-between relative z-10">
+        <div className="max-w-4xl mx-auto relative z-10">
+          <div className="flex items-center justify-end gap-2 mb-4">
+            {user?.role === "admin" && (
+              <Link href="/admin/users">
+                <Button variant="ghost" size="sm" className="text-primary-foreground/80 hover:text-primary-foreground hover:bg-white/10">
+                  <Shield className="w-4 h-4 mr-1" /> Users
+                </Button>
+              </Link>
+            )}
+            <Button variant="ghost" size="sm" onClick={() => logout()} className="text-primary-foreground/80 hover:text-primary-foreground hover:bg-white/10">
+              <LogOut className="w-4 h-4 mr-1" /> Sign Out
+            </Button>
+          </div>
+          <div className="flex flex-col md:flex-row gap-8 items-center justify-between">
           <div>
             <h1 className="text-3xl md:text-4xl font-serif font-bold tracking-tight mb-2">Study Buddy</h1>
             <p className="text-primary-foreground/90 text-sm md:text-base font-medium max-w-md">
@@ -121,6 +136,7 @@ export default function Home() {
               </div>
             </DialogContent>
           </Dialog>
+          </div>
         </div>
       </header>
 

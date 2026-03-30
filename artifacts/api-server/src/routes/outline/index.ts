@@ -5,6 +5,7 @@ import { eq, and } from "drizzle-orm";
 import { openai } from "@workspace/integrations-openai-ai-server";
 import {
   UploadOutlineBody,
+  UpdateOutlineSectionBody,
   ChatAboutSectionBody,
 } from "@workspace/api-zod";
 import { extractText } from "unpdf";
@@ -128,6 +129,40 @@ router.delete("/projects/:id/outline", async (req, res) => {
   const projectId = parseInt(req.params.id, 10);
   await db.delete(outlineSectionsTable).where(eq(outlineSectionsTable.projectId, projectId));
   res.status(204).send();
+});
+
+router.put("/projects/:id/outline/:sectionId", async (req, res) => {
+  try {
+    const projectId = parseInt(req.params.id, 10);
+    const sectionId = parseInt(req.params.sectionId, 10);
+    const body = UpdateOutlineSectionBody.parse(req.body);
+
+    const [section] = await db
+      .select()
+      .from(outlineSectionsTable)
+      .where(
+        and(
+          eq(outlineSectionsTable.id, sectionId),
+          eq(outlineSectionsTable.projectId, projectId)
+        )
+      );
+
+    if (!section) {
+      res.status(404).json({ error: "Section not found" });
+      return;
+    }
+
+    const [updated] = await db
+      .update(outlineSectionsTable)
+      .set({ title: body.title, content: body.content })
+      .where(eq(outlineSectionsTable.id, sectionId))
+      .returning();
+
+    res.json(updated);
+  } catch (err) {
+    console.error("Update outline section error:", err);
+    res.status(500).json({ error: "Failed to update section" });
+  }
 });
 
 router.delete("/projects/:id/outline/:sectionId", async (req, res) => {

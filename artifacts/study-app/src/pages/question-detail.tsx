@@ -7,6 +7,7 @@ import {
   useDeepExplainQuestion,
   useChatAboutQuestion,
   useDeleteQuestion,
+  useUpdateQuestion,
   getGetQuestionQueryKey,
   getListQuestionsQueryKey,
   getGetQuestionStatsQueryKey,
@@ -21,7 +22,9 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Check, X, Trash2, Loader2, Sparkles, Lightbulb, BookOpen, MessageCircle, Send, GraduationCap, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Check, X, Trash2, Loader2, Sparkles, Lightbulb, BookOpen, MessageCircle, Send, GraduationCap, AlertTriangle, Pencil, Save, XCircle } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
@@ -75,6 +78,49 @@ export default function QuestionDetail() {
   });
 
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editQuestionText, setEditQuestionText] = useState("");
+  const [editChoices, setEditChoices] = useState<{ label: string; text: string; isCorrect: boolean }[]>([]);
+
+  const updateQuestionMutation = useUpdateQuestion({
+    mutation: {
+      onSuccess: () => {
+        toast({ title: "Question updated" });
+        queryClient.invalidateQueries({ queryKey: getGetQuestionQueryKey(id) });
+        setIsEditing(false);
+      },
+      onError: () => {
+        toast({ title: "Failed to update question", variant: "destructive" });
+      },
+    },
+  });
+
+  const startEditing = () => {
+    if (!question) return;
+    setEditQuestionText(question.questionText);
+    setEditChoices(question.choices.map((c) => ({ label: c.label, text: c.text, isCorrect: c.isCorrect })));
+    setIsEditing(true);
+  };
+
+  const saveEdit = () => {
+    if (!editQuestionText.trim()) return;
+    updateQuestionMutation.mutate({
+      id,
+      data: { questionText: editQuestionText, choices: editChoices },
+    });
+  };
+
+  const updateEditChoice = (index: number, field: string, value: string | boolean) => {
+    setEditChoices((prev) =>
+      prev.map((c, i) => {
+        if (i !== index) {
+          if (field === "isCorrect" && value === true) return { ...c, isCorrect: false };
+          return c;
+        }
+        return { ...c, [field]: value };
+      })
+    );
+  };
 
   const deleteQuestionMutation = useDeleteQuestion({
     mutation: {
@@ -179,9 +225,16 @@ export default function QuestionDetail() {
             <ArrowLeft className="w-5 h-5 mr-2" />
             Back to Deck
           </Link>
-          <Button variant="ghost" size="icon" onClick={handleDelete} className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-full">
-            <Trash2 className="w-5 h-5" />
-          </Button>
+          <div className="flex items-center gap-1">
+            {!isEditing && (
+              <Button variant="ghost" size="icon" onClick={startEditing} className="text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-full">
+                <Pencil className="w-4 h-4" />
+              </Button>
+            )}
+            <Button variant="ghost" size="icon" onClick={handleDelete} className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-full">
+              <Trash2 className="w-5 h-5" />
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -195,6 +248,53 @@ export default function QuestionDetail() {
             )}
           </div>
           <CardContent className="p-6 md:p-8">
+            {isEditing ? (
+              <div className="space-y-5">
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2 block">Question Text</label>
+                  <Textarea
+                    value={editQuestionText}
+                    onChange={(e) => setEditQuestionText(e.target.value)}
+                    className="min-h-[100px] text-base"
+                  />
+                </div>
+                <div className="space-y-3">
+                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Answer Choices</label>
+                  {editChoices.map((choice, i) => (
+                    <div key={i} className="flex items-center gap-3">
+                      <span className="w-7 h-7 rounded-full bg-muted flex items-center justify-center text-xs font-bold flex-shrink-0">
+                        {choice.label}
+                      </span>
+                      <Input
+                        value={choice.text}
+                        onChange={(e) => updateEditChoice(i, "text", e.target.value)}
+                        className="flex-1 text-sm"
+                      />
+                      <Button
+                        type="button"
+                        variant={choice.isCorrect ? "default" : "outline"}
+                        size="sm"
+                        className="text-xs flex-shrink-0"
+                        onClick={() => updateEditChoice(i, "isCorrect", true)}
+                      >
+                        {choice.isCorrect ? <Check className="w-3 h-3 mr-1" /> : null}
+                        Correct
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex gap-2 pt-2">
+                  <Button onClick={saveEdit} disabled={updateQuestionMutation.isPending} size="sm">
+                    {updateQuestionMutation.isPending ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Save className="w-4 h-4 mr-1" />}
+                    Save
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => setIsEditing(false)}>
+                    <XCircle className="w-4 h-4 mr-1" /> Cancel
+                  </Button>
+                </div>
+              </div>
+            ) : (
+            <>
             <div className="mb-8">
               <Badge variant="outline" className="mb-3 text-primary border-primary/20 bg-primary/5 px-2.5 py-0.5 text-xs font-medium uppercase tracking-widest">
                 Question {question.id}
@@ -273,6 +373,8 @@ export default function QuestionDetail() {
                 );
               })}
             </RadioGroup>
+            </>
+            )}
           </CardContent>
 
           <CardFooter className="bg-muted/40 px-8 py-8 border-t border-border flex flex-col sm:flex-row justify-end gap-4">

@@ -4,13 +4,16 @@ import {
   useListOutlineSections,
   useDeepExplainSection,
   useChatAboutSection,
+  useUpdateOutlineSection,
   getListOutlineSectionsQueryKey,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Loader2, Sparkles, BookOpen, MessageCircle, Send, GraduationCap } from "lucide-react";
+import { ArrowLeft, Loader2, Sparkles, BookOpen, MessageCircle, Send, GraduationCap, Pencil, Save, XCircle } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 
@@ -28,6 +31,9 @@ export default function OutlineSectionDetail() {
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatInput, setChatInput] = useState("");
   const [showChat, setShowChat] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editTitle, setEditTitle] = useState("");
+  const [editContent, setEditContent] = useState("");
 
   const { data: sections } = useListOutlineSections(projectId);
   const section = sections?.find((s) => s.id === sectionId);
@@ -52,6 +58,37 @@ export default function OutlineSectionDetail() {
       },
     },
   });
+
+  const queryClient = useQueryClient();
+
+  const updateSectionMutation = useUpdateOutlineSection({
+    mutation: {
+      onSuccess: () => {
+        toast({ title: "Section updated" });
+        queryClient.invalidateQueries({ queryKey: getListOutlineSectionsQueryKey(projectId) });
+        setIsEditing(false);
+      },
+      onError: () => {
+        toast({ title: "Failed to update section", variant: "destructive" });
+      },
+    },
+  });
+
+  const startEditing = () => {
+    if (!section) return;
+    setEditTitle(section.title);
+    setEditContent(section.content);
+    setIsEditing(true);
+  };
+
+  const saveEdit = () => {
+    if (!editTitle.trim()) return;
+    updateSectionMutation.mutate({
+      id: projectId,
+      sectionId,
+      data: { title: editTitle, content: editContent },
+    });
+  };
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -106,6 +143,11 @@ export default function OutlineSectionDetail() {
             <ArrowLeft className="w-5 h-5 mr-2" />
             Back to Project
           </Link>
+          {!isEditing && (
+            <Button variant="ghost" size="icon" onClick={startEditing} className="text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-full">
+              <Pencil className="w-4 h-4" />
+            </Button>
+          )}
         </div>
       </div>
 
@@ -113,6 +155,35 @@ export default function OutlineSectionDetail() {
         <Card className="shadow-lg border-0 bg-card rounded-2xl overflow-hidden">
           <div className="h-2 bg-gradient-to-r from-primary via-primary/80 to-primary/60" />
           <CardContent className="p-8 md:p-10">
+            {isEditing ? (
+              <div className="space-y-5">
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2 block">Title</label>
+                  <Input
+                    value={editTitle}
+                    onChange={(e) => setEditTitle(e.target.value)}
+                    className="text-base font-semibold"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2 block">Content</label>
+                  <Textarea
+                    value={editContent}
+                    onChange={(e) => setEditContent(e.target.value)}
+                    className="min-h-[200px] text-base leading-relaxed"
+                  />
+                </div>
+                <div className="flex gap-2 pt-2">
+                  <Button onClick={saveEdit} disabled={updateSectionMutation.isPending} size="sm">
+                    {updateSectionMutation.isPending ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Save className="w-4 h-4 mr-1" />}
+                    Save
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => setIsEditing(false)}>
+                    <XCircle className="w-4 h-4 mr-1" /> Cancel
+                  </Button>
+                </div>
+              </div>
+            ) : (
             <div className="mb-6">
               <span className="inline-block bg-primary/10 text-primary text-xs font-semibold uppercase tracking-wider px-3 py-1 rounded-md mb-4">
                 Outline Section
@@ -124,6 +195,7 @@ export default function OutlineSectionDetail() {
                 {section.content}
               </div>
             </div>
+            )}
           </CardContent>
         </Card>
 

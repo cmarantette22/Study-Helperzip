@@ -175,6 +175,28 @@ export const DeleteAllOutlineSectionsParams = zod.object({
 });
 
 /**
+ * @summary Update an outline section's title and content
+ */
+export const UpdateOutlineSectionParams = zod.object({
+  id: zod.coerce.number(),
+  sectionId: zod.coerce.number(),
+});
+
+export const UpdateOutlineSectionBody = zod.object({
+  title: zod.string(),
+  content: zod.string(),
+});
+
+export const UpdateOutlineSectionResponse = zod.object({
+  id: zod.number(),
+  projectId: zod.number(),
+  title: zod.string(),
+  content: zod.string(),
+  orderIndex: zod.number(),
+  createdAt: zod.coerce.date(),
+});
+
+/**
  * @summary Delete a single outline section
  */
 export const DeleteOutlineSectionParams = zod.object({
@@ -345,6 +367,43 @@ export const GetQuestionResponse = zod.object({
 });
 
 /**
+ * @summary Update a question's text and choices
+ */
+export const UpdateQuestionParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const UpdateQuestionBody = zod.object({
+  questionText: zod.string(),
+  choices: zod.array(
+    zod.object({
+      id: zod.number().optional(),
+      label: zod.string(),
+      text: zod.string(),
+      isCorrect: zod.boolean(),
+    }),
+  ),
+});
+
+export const UpdateQuestionResponse = zod.object({
+  id: zod.number(),
+  projectId: zod.number().nullish(),
+  questionText: zod.string(),
+  choices: zod.array(
+    zod.object({
+      id: zod.number(),
+      questionId: zod.number(),
+      label: zod.string(),
+      text: zod.string(),
+      isCorrect: zod.boolean(),
+    }),
+  ),
+  answered: zod.boolean(),
+  answeredCorrectly: zod.boolean().nullish(),
+  createdAt: zod.coerce.date(),
+});
+
+/**
  * @summary Delete a question
  */
 export const DeleteQuestionParams = zod.object({
@@ -440,4 +499,76 @@ export const GetQuestionStatsResponse = zod.object({
   correctAnswers: zod.number(),
   incorrectAnswers: zod.number(),
   accuracyPercent: zod.number(),
+});
+
+/**
+ * @summary Login with email and password
+ */
+export const LoginBody = zod.object({
+  email: zod.string(),
+  password: zod.string(),
+});
+
+export const LoginResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  email: zod.string(),
+  role: zod.enum(["admin", "user"]),
+  mustChangePassword: zod.boolean(),
+});
+
+/**
+ * @summary Get current authenticated user
+ */
+export const GetMeResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  email: zod.string(),
+  role: zod.enum(["admin", "user"]),
+  mustChangePassword: zod.boolean(),
+});
+
+/**
+ * @summary Change password (required after temp password login)
+ */
+export const ChangePasswordBody = zod.object({
+  currentPassword: zod.string(),
+  newPassword: zod.string(),
+});
+
+export const ChangePasswordResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  email: zod.string(),
+  role: zod.enum(["admin", "user"]),
+  mustChangePassword: zod.boolean(),
+});
+
+/**
+ * @summary List all users (admin only)
+ */
+export const ListUsersResponseItem = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  email: zod.string(),
+  role: zod.enum(["admin", "user"]),
+  mustChangePassword: zod.boolean(),
+  createdAt: zod.coerce.date(),
+});
+export const ListUsersResponse = zod.array(ListUsersResponseItem);
+
+/**
+ * @summary Create a new user with temp password (admin only)
+ */
+export const CreateUserBody = zod.object({
+  name: zod.string(),
+  email: zod.string(),
+  password: zod.string(),
+});
+
+/**
+ * @summary Delete a user (admin only)
+ */
+export const DeleteUserParams = zod.object({
+  id: zod.coerce.number(),
 });

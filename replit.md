@@ -56,6 +56,9 @@ A study app for multiple-choice questions with AI-powered features:
 - **Course outline upload**: Upload a course outline (text or PDF), AI breaks it into study sections
 - **Section deep dive**: Get structured analysis of principles for each outline section
 - **Section follow-up chat**: Multi-turn conversation with AI tutor about any outline section
+- **Inline editing**: Edit question text, choices, and correct answer marking directly on the question detail page; edit outline section title and content on the section detail page
+- **User management**: Admin-created accounts with temporary passwords and forced password change on first login; role-based access (admin/user)
+- **Authentication**: Session-based auth with login, logout, and password change; auth-gated routes
 
 ### Database Schema
 
@@ -63,6 +66,7 @@ A study app for multiple-choice questions with AI-powered features:
 - **questions**: id, project_id (FK → projects, cascade delete), question_text, answered, answered_correctly, created_at
 - **choices**: id, question_id (FK → questions, cascade delete), label, text, is_correct
 - **outline_sections**: id, project_id (FK → projects, cascade delete), title, content, order_index, created_at
+- **users**: id, name, email, password_hash, role (admin/user), must_change_password, created_at
 
 ### API Endpoints (under /api)
 
@@ -93,6 +97,21 @@ Questions:
 - `POST /questions/:id/deep-explain` — get structured principle analysis
 - `POST /questions/:id/chat` — multi-turn follow-up conversation
 - `GET /questions/stats?projectId=N` — get study statistics (optional project filter)
+- `PUT /questions/:id` — update question text and choices
+
+Outline:
+- `PUT /projects/:id/outline/:sectionId` — update outline section title and content
+
+Auth:
+- `POST /auth/login` — login with email/password
+- `GET /auth/me` — get current user
+- `POST /auth/logout` — logout
+- `POST /auth/change-password` — change password
+
+Admin:
+- `GET /admin/users` — list all users (admin only)
+- `POST /admin/users` — create user with temp password (admin only)
+- `DELETE /admin/users/:id` — delete user (admin only)
 
 ## TypeScript & Composite Projects
 

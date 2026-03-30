@@ -162,6 +162,88 @@ export interface QuestionStats {
   accuracyPercent: number;
 }
 
+export type UpdateQuestionBodyChoicesItem = {
+  id?: number;
+  label: string;
+  text: string;
+  isCorrect: boolean;
+};
+
+export interface UpdateQuestionBody {
+  questionText: string;
+  choices: UpdateQuestionBodyChoicesItem[];
+}
+
+export interface UpdateOutlineSectionBody {
+  title: string;
+  content: string;
+}
+
+export interface LoginBody {
+  email: string;
+  password: string;
+}
+
+export interface ChangePasswordBody {
+  currentPassword: string;
+  newPassword: string;
+}
+
+export type AuthUserRole = (typeof AuthUserRole)[keyof typeof AuthUserRole];
+
+export const AuthUserRole = {
+  admin: "admin",
+  user: "user",
+} as const;
+
+export interface AuthUser {
+  id: number;
+  name: string;
+  email: string;
+  role: AuthUserRole;
+  mustChangePassword: boolean;
+}
+
+export interface CreateUserBody {
+  name: string;
+  email: string;
+  password: string;
+}
+
+export type AdminUserRole = (typeof AdminUserRole)[keyof typeof AdminUserRole];
+
+export const AdminUserRole = {
+  admin: "admin",
+  user: "user",
+} as const;
+
+export interface AdminUser {
+  id: number;
+  name: string;
+  email: string;
+  role: AdminUserRole;
+  mustChangePassword: boolean;
+  createdAt: string;
+}
+
+export type AdminUserWithPasswordRole =
+  (typeof AdminUserWithPasswordRole)[keyof typeof AdminUserWithPasswordRole];
+
+export const AdminUserWithPasswordRole = {
+  admin: "admin",
+  user: "user",
+} as const;
+
+export interface AdminUserWithPassword {
+  id: number;
+  name: string;
+  email: string;
+  role: AdminUserWithPasswordRole;
+  mustChangePassword: boolean;
+  tempPassword: string;
+  createdAt: string;
+}
+
 export type ListProjectQuestionsParams = {
   filter?: ListProjectQuestionsFilter;
 };
