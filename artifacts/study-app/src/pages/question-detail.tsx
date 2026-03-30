@@ -154,6 +154,19 @@ export default function QuestionDetail() {
   });
 
   useEffect(() => {
+    setSelectedChoiceId(null);
+    setSelectedChoiceIds([]);
+    setChatMessages([]);
+    setChatInput("");
+    setShowChat(false);
+    setIsEditing(false);
+    checkAnswerMutation.reset();
+    explainAnswersMutation.reset();
+    deepExplainMutation.reset();
+    chatMutation.reset();
+  }, [id]);
+
+  useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chatMessages]);
 
