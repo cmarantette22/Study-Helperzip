@@ -42,6 +42,37 @@ export interface Choice {
   isCorrect: boolean;
 }
 
+export type QuestionExplanationsItem = {
+  choiceId: number;
+  label: string;
+  isCorrect: boolean;
+  explanation: string;
+};
+
+export type QuestionDeepExplanationPrinciplesItem = {
+  name: string;
+  description: string;
+  howItApplies: string;
+};
+
+export type QuestionDeepExplanation = {
+  principles: QuestionDeepExplanationPrinciplesItem[];
+  summary: string;
+} | null;
+
+export type QuestionChatMessagesItemRole =
+  (typeof QuestionChatMessagesItemRole)[keyof typeof QuestionChatMessagesItemRole];
+
+export const QuestionChatMessagesItemRole = {
+  user: "user",
+  assistant: "assistant",
+} as const;
+
+export type QuestionChatMessagesItem = {
+  role: QuestionChatMessagesItemRole;
+  content: string;
+};
+
 export interface Question {
   id: number;
   projectId?: number | null;
@@ -50,6 +81,9 @@ export interface Question {
   answered: boolean;
   answeredCorrectly?: boolean | null;
   multiSelect: boolean;
+  explanations?: QuestionExplanationsItem[] | null;
+  deepExplanation?: QuestionDeepExplanation;
+  chatMessages?: QuestionChatMessagesItem[] | null;
   createdAt: string;
 }
 

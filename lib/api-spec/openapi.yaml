@@ -794,6 +794,63 @@ components:
           nullable: true
         multiSelect:
           type: boolean
+        explanations:
+          type: array
+          nullable: true
+          items:
+            type: object
+            properties:
+              choiceId:
+                type: integer
+              label:
+                type: string
+              isCorrect:
+                type: boolean
+              explanation:
+                type: string
+            required:
+              - choiceId
+              - label
+              - isCorrect
+              - explanation
+        deepExplanation:
+          nullable: true
+          type: object
+          properties:
+            principles:
+              type: array
+              items:
+                type: object
+                properties:
+                  name:
+                    type: string
+                  description:
+                    type: string
+                  howItApplies:
+                    type: string
+                required:
+                  - name
+                  - description
+                  - howItApplies
+            summary:
+              type: string
+          required:
+            - principles
+            - summary
+        chatMessages:
+          type: array
+          nullable: true
+          items:
+            type: object
+            properties:
+              role:
+                type: string
+                enum: [user, assistant]
+              content:
+                type: string
+            required:
+              - role
+              - content
         createdAt:
           type: string
           format: date-time

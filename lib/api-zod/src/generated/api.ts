@@ -101,6 +101,36 @@ export const ListProjectQuestionsResponseItem = zod.object({
   answered: zod.boolean(),
   answeredCorrectly: zod.boolean().nullish(),
   multiSelect: zod.boolean(),
+  explanations: zod
+    .array(
+      zod.object({
+        choiceId: zod.number(),
+        label: zod.string(),
+        isCorrect: zod.boolean(),
+        explanation: zod.string(),
+      }),
+    )
+    .nullish(),
+  deepExplanation: zod
+    .object({
+      principles: zod.array(
+        zod.object({
+          name: zod.string(),
+          description: zod.string(),
+          howItApplies: zod.string(),
+        }),
+      ),
+      summary: zod.string(),
+    })
+    .nullish(),
+  chatMessages: zod
+    .array(
+      zod.object({
+        role: zod.enum(["user", "assistant"]),
+        content: zod.string(),
+      }),
+    )
+    .nullish(),
   createdAt: zod.coerce.date(),
 });
 export const ListProjectQuestionsResponse = zod.array(
@@ -267,6 +297,36 @@ export const ListQuestionsResponseItem = zod.object({
   answered: zod.boolean(),
   answeredCorrectly: zod.boolean().nullish(),
   multiSelect: zod.boolean(),
+  explanations: zod
+    .array(
+      zod.object({
+        choiceId: zod.number(),
+        label: zod.string(),
+        isCorrect: zod.boolean(),
+        explanation: zod.string(),
+      }),
+    )
+    .nullish(),
+  deepExplanation: zod
+    .object({
+      principles: zod.array(
+        zod.object({
+          name: zod.string(),
+          description: zod.string(),
+          howItApplies: zod.string(),
+        }),
+      ),
+      summary: zod.string(),
+    })
+    .nullish(),
+  chatMessages: zod
+    .array(
+      zod.object({
+        role: zod.enum(["user", "assistant"]),
+        content: zod.string(),
+      }),
+    )
+    .nullish(),
   createdAt: zod.coerce.date(),
 });
 export const ListQuestionsResponse = zod.array(ListQuestionsResponseItem);
@@ -313,6 +373,36 @@ export const ParsePdfQuestionsResponse = zod.object({
       answered: zod.boolean(),
       answeredCorrectly: zod.boolean().nullish(),
       multiSelect: zod.boolean(),
+      explanations: zod
+        .array(
+          zod.object({
+            choiceId: zod.number(),
+            label: zod.string(),
+            isCorrect: zod.boolean(),
+            explanation: zod.string(),
+          }),
+        )
+        .nullish(),
+      deepExplanation: zod
+        .object({
+          principles: zod.array(
+            zod.object({
+              name: zod.string(),
+              description: zod.string(),
+              howItApplies: zod.string(),
+            }),
+          ),
+          summary: zod.string(),
+        })
+        .nullish(),
+      chatMessages: zod
+        .array(
+          zod.object({
+            role: zod.enum(["user", "assistant"]),
+            content: zod.string(),
+          }),
+        )
+        .nullish(),
       createdAt: zod.coerce.date(),
     }),
   ),
@@ -343,6 +433,36 @@ export const ParseQuestionImageResponse = zod.object({
   answered: zod.boolean(),
   answeredCorrectly: zod.boolean().nullish(),
   multiSelect: zod.boolean(),
+  explanations: zod
+    .array(
+      zod.object({
+        choiceId: zod.number(),
+        label: zod.string(),
+        isCorrect: zod.boolean(),
+        explanation: zod.string(),
+      }),
+    )
+    .nullish(),
+  deepExplanation: zod
+    .object({
+      principles: zod.array(
+        zod.object({
+          name: zod.string(),
+          description: zod.string(),
+          howItApplies: zod.string(),
+        }),
+      ),
+      summary: zod.string(),
+    })
+    .nullish(),
+  chatMessages: zod
+    .array(
+      zod.object({
+        role: zod.enum(["user", "assistant"]),
+        content: zod.string(),
+      }),
+    )
+    .nullish(),
   createdAt: zod.coerce.date(),
 });
 
@@ -369,6 +489,36 @@ export const GetQuestionResponse = zod.object({
   answered: zod.boolean(),
   answeredCorrectly: zod.boolean().nullish(),
   multiSelect: zod.boolean(),
+  explanations: zod
+    .array(
+      zod.object({
+        choiceId: zod.number(),
+        label: zod.string(),
+        isCorrect: zod.boolean(),
+        explanation: zod.string(),
+      }),
+    )
+    .nullish(),
+  deepExplanation: zod
+    .object({
+      principles: zod.array(
+        zod.object({
+          name: zod.string(),
+          description: zod.string(),
+          howItApplies: zod.string(),
+        }),
+      ),
+      summary: zod.string(),
+    })
+    .nullish(),
+  chatMessages: zod
+    .array(
+      zod.object({
+        role: zod.enum(["user", "assistant"]),
+        content: zod.string(),
+      }),
+    )
+    .nullish(),
   createdAt: zod.coerce.date(),
 });
 
@@ -408,6 +558,36 @@ export const UpdateQuestionResponse = zod.object({
   answered: zod.boolean(),
   answeredCorrectly: zod.boolean().nullish(),
   multiSelect: zod.boolean(),
+  explanations: zod
+    .array(
+      zod.object({
+        choiceId: zod.number(),
+        label: zod.string(),
+        isCorrect: zod.boolean(),
+        explanation: zod.string(),
+      }),
+    )
+    .nullish(),
+  deepExplanation: zod
+    .object({
+      principles: zod.array(
+        zod.object({
+          name: zod.string(),
+          description: zod.string(),
+          howItApplies: zod.string(),
+        }),
+      ),
+      summary: zod.string(),
+    })
+    .nullish(),
+  chatMessages: zod
+    .array(
+      zod.object({
+        role: zod.enum(["user", "assistant"]),
+        content: zod.string(),
+      }),
+    )
+    .nullish(),
   createdAt: zod.coerce.date(),
 });
 

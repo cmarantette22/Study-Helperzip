@@ -498,6 +498,11 @@ Important: Return ONLY the JSON, no markdown code fences or other text.`,
       "No explanation available.",
   }));
 
+  await db
+    .update(questionsTable)
+    .set({ explanations })
+    .where(eq(questionsTable.id, id));
+
   res.json({ explanations });
 });
 
@@ -567,6 +572,11 @@ Important: Return ONLY the JSON, no markdown code fences or other text. Include 
     return;
   }
 
+  await db
+    .update(questionsTable)
+    .set({ deepExplanation: parsed })
+    .where(eq(questionsTable.id, id));
+
   res.json(parsed);
 });
 
@@ -635,6 +645,17 @@ Keep your responses clear and focused. Use plain text, not markdown formatting.`
     res.status(500).json({ error: "Failed to generate response" });
     return;
   }
+
+  const updatedHistory = [
+    ...(body.conversationHistory ?? []),
+    { role: "user" as const, content: body.message },
+    { role: "assistant" as const, content: reply },
+  ];
+
+  await db
+    .update(questionsTable)
+    .set({ chatMessages: updatedHistory })
+    .where(eq(questionsTable.id, id));
 
   res.json({ reply });
 });

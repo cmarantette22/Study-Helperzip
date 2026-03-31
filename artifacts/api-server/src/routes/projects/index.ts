@@ -155,7 +155,7 @@ router.post("/projects/:id/reset", async (req, res) => {
 
   const result = await db
     .update(questionsTable)
-    .set({ answered: false, answeredCorrectly: null })
+    .set({ answered: false, answeredCorrectly: null, explanations: null, deepExplanation: null, chatMessages: null })
     .where(and(...conditions))
     .returning();
 

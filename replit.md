@@ -49,9 +49,9 @@ A study app for multiple-choice questions with AI-powered features:
 - **Upload PDFs**: Upload a PDF document with multiple-choice questions and an answer key; AI extracts all questions and marks correct answers automatically (uses `unpdf` for text extraction)
 - **Quiz mode**: Answer questions and get instant correct/incorrect feedback
 - **Filter & reset**: Filter questions by All, Unanswered, Correct, Needs Review; reset answers for filtered sets to re-study
-- **AI explanations**: Request AI to explain why each answer choice is correct or incorrect
-- **Deep dive**: Get structured analysis of underlying principles and concepts
-- **Follow-up chat**: Multi-turn conversation with AI tutor about any question
+- **AI explanations**: Request AI to explain why each answer choice is correct or incorrect; saved to DB for future reference with refresh option
+- **Deep dive**: Get structured analysis of underlying principles and concepts; saved to DB for future reference with refresh option
+- **Follow-up chat**: Multi-turn conversation with AI tutor about any question; chat history saved to DB and restored on page load
 - **Study stats**: Track total questions, accuracy percentage, and questions needing review (per-project and overall)
 - **Course outline upload**: Upload a course outline (text or PDF), AI breaks it into study sections
 - **Section deep dive**: Get structured analysis of principles for each outline section
@@ -64,7 +64,7 @@ A study app for multiple-choice questions with AI-powered features:
 ### Database Schema
 
 - **projects**: id, name, created_at
-- **questions**: id, project_id (FK → projects, cascade delete), question_text, answered, answered_correctly, multi_select (boolean, default false), created_at
+- **questions**: id, project_id (FK → projects, cascade delete), question_text, answered, answered_correctly, multi_select (boolean, default false), explanations (jsonb, nullable), deep_explanation (jsonb, nullable), chat_messages (jsonb, nullable), created_at
 - **choices**: id, question_id (FK → questions, cascade delete), label, text, is_correct
 - **outline_sections**: id, project_id (FK → projects, cascade delete), title, content, order_index, created_at
 - **users**: id, name, email, password_hash, role (admin/user), must_change_password, created_at

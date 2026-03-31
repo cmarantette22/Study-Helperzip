@@ -6,6 +6,9 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { Choice } from "./choice";
+import type { QuestionChatMessagesItem } from "./questionChatMessagesItem";
+import type { QuestionDeepExplanation } from "./questionDeepExplanation";
+import type { QuestionExplanationsItem } from "./questionExplanationsItem";
 
 export interface Question {
   id: number;
@@ -15,5 +18,8 @@ export interface Question {
   answered: boolean;
   answeredCorrectly?: boolean | null;
   multiSelect: boolean;
+  explanations?: QuestionExplanationsItem[] | null;
+  deepExplanation?: QuestionDeepExplanation;
+  chatMessages?: QuestionChatMessagesItem[] | null;
   createdAt: Date;
 }

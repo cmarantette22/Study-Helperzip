@@ -1,4 +1,4 @@
-import { pgTable, text, serial, boolean, timestamp, integer } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, boolean, timestamp, integer, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { projectsTable } from "./projects";
@@ -10,6 +10,9 @@ export const questionsTable = pgTable("questions", {
   answered: boolean("answered").notNull().default(false),
   answeredCorrectly: boolean("answered_correctly"),
   multiSelect: boolean("multi_select").notNull().default(false),
+  explanations: jsonb("explanations"),
+  deepExplanation: jsonb("deep_explanation"),
+  chatMessages: jsonb("chat_messages"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

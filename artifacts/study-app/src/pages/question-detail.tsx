@@ -76,17 +76,26 @@ export default function QuestionDetail() {
   });
 
   const explainAnswersMutation = useExplainAnswers({
-    mutation: {}
+    mutation: {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: getGetQuestionQueryKey(id) });
+      }
+    }
   });
 
   const deepExplainMutation = useDeepExplainQuestion({
-    mutation: {}
+    mutation: {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: getGetQuestionQueryKey(id) });
+      }
+    }
   });
 
   const chatMutation = useChatAboutQuestion({
     mutation: {
       onSuccess: (data) => {
         setChatMessages(prev => [...prev, { role: "assistant", content: data.reply }]);
+        queryClient.invalidateQueries({ queryKey: getGetQuestionQueryKey(id) });
       }
     }
   });
@@ -167,14 +176,21 @@ export default function QuestionDetail() {
   }, [id]);
 
   useEffect(() => {
+    if (question?.chatMessages && Array.isArray(question.chatMessages) && question.chatMessages.length > 0) {
+      setChatMessages(question.chatMessages as ChatMessage[]);
+      setShowChat(true);
+    }
+  }, [question?.id]);
+
+  useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chatMessages]);
 
   const isSubmitting = checkAnswerMutation.isPending;
   const isChecking = question?.answered;
   const checkResult = checkAnswerMutation.data;
-  const explanations = explainAnswersMutation.data?.explanations;
-  const deepExplanation = deepExplainMutation.data;
+  const explanations = explainAnswersMutation.data?.explanations ?? (question?.explanations as { choiceId: number; label: string; isCorrect: boolean; explanation: string }[] | null) ?? null;
+  const deepExplanation = deepExplainMutation.data ?? (question?.deepExplanation as { principles: { name: string; description: string; howItApplies: string }[]; summary: string } | null) ?? null;
   
   const correctChoiceId = question?.choices.find(c => c.isCorrect)?.id;
   const correctChoiceIds = question?.choices.filter(c => c.isCorrect).map(c => c.id) ?? [];
@@ -515,21 +531,19 @@ export default function QuestionDetail() {
                   )}
                 </div>
                 <div className="flex gap-3 w-full sm:w-auto flex-wrap">
-                  {!explanations && (
-                    <Button 
-                      variant="secondary" 
-                      onClick={handleExplain}
-                      disabled={explainAnswersMutation.isPending}
-                      className="flex-1 sm:flex-none bg-amber-100 hover:bg-amber-200 text-amber-900 h-12 px-5 shadow-sm font-medium"
-                    >
-                      {explainAnswersMutation.isPending ? (
-                        <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                      ) : (
-                        <Sparkles className="w-5 h-5 mr-2" />
-                      )}
-                      Explain
-                    </Button>
-                  )}
+                  <Button 
+                    variant="secondary" 
+                    onClick={handleExplain}
+                    disabled={explainAnswersMutation.isPending}
+                    className="flex-1 sm:flex-none bg-amber-100 hover:bg-amber-200 text-amber-900 h-12 px-5 shadow-sm font-medium"
+                  >
+                    {explainAnswersMutation.isPending ? (
+                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                    ) : (
+                      <Sparkles className="w-5 h-5 mr-2" />
+                    )}
+                    {explanations ? "Refresh Explanations" : "Explain"}
+                  </Button>
                   <Button
                     className="flex-1 sm:flex-none h-12 px-6 shadow-md"
                     onClick={() => setLocation(nextQuestionId ? `/question/${nextQuestionId}` : (question?.projectId ? `/project/${question.projectId}` : "/"))}
@@ -545,21 +559,19 @@ export default function QuestionDetail() {
         {isChecking && (
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="flex gap-3">
-              {!deepExplanation && (
-                <Button
-                  variant="outline"
-                  onClick={handleDeepExplain}
-                  disabled={deepExplainMutation.isPending}
-                  className="h-12 px-6 border-primary/30 text-primary hover:bg-primary/5 font-medium"
-                >
-                  {deepExplainMutation.isPending ? (
-                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                  ) : (
-                    <BookOpen className="w-5 h-5 mr-2" />
-                  )}
-                  Deep Dive into Principles
-                </Button>
-              )}
+              <Button
+                variant="outline"
+                onClick={handleDeepExplain}
+                disabled={deepExplainMutation.isPending}
+                className="h-12 px-6 border-primary/30 text-primary hover:bg-primary/5 font-medium"
+              >
+                {deepExplainMutation.isPending ? (
+                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                ) : (
+                  <BookOpen className="w-5 h-5 mr-2" />
+                )}
+                {deepExplanation ? "Refresh Deep Dive" : "Deep Dive into Principles"}
+              </Button>
               {!showChat && (
                 <Button
                   variant="outline"
