@@ -153,6 +153,17 @@ export const ResetProjectAnswersResponse = zod.object({
 });
 
 /**
+ * @summary Delete all questions in a project
+ */
+export const DeleteAllProjectQuestionsParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const DeleteAllProjectQuestionsResponse = zod.object({
+  deletedCount: zod.number(),
+});
+
+/**
  * @summary List outline sections for a project
  */
 export const ListOutlineSectionsParams = zod.object({

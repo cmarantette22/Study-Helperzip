@@ -29,6 +29,7 @@ import type {
   CreateQuestionBody,
   CreateUserBody,
   DeepExplainResult,
+  DeleteAllProjectQuestions200,
   ExplainResult,
   GetQuestionStatsParams,
   HealthStatus,
@@ -764,6 +765,93 @@ export const useResetProjectAnswers = <
   TContext
 > => {
   return useMutation(getResetProjectAnswersMutationOptions(options));
+};
+
+/**
+ * @summary Delete all questions in a project
+ */
+export const getDeleteAllProjectQuestionsUrl = (id: number) => {
+  return `/api/projects/${id}/delete-questions`;
+};
+
+export const deleteAllProjectQuestions = async (
+  id: number,
+  options?: RequestInit,
+): Promise<DeleteAllProjectQuestions200> => {
+  return customFetch<DeleteAllProjectQuestions200>(
+    getDeleteAllProjectQuestionsUrl(id),
+    {
+      ...options,
+      method: "POST",
+    },
+  );
+};
+
+export const getDeleteAllProjectQuestionsMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteAllProjectQuestions>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteAllProjectQuestions>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["deleteAllProjectQuestions"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteAllProjectQuestions>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return deleteAllProjectQuestions(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteAllProjectQuestionsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteAllProjectQuestions>>
+>;
+
+export type DeleteAllProjectQuestionsMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Delete all questions in a project
+ */
+export const useDeleteAllProjectQuestions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteAllProjectQuestions>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteAllProjectQuestions>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getDeleteAllProjectQuestionsMutationOptions(options));
 };
 
 /**

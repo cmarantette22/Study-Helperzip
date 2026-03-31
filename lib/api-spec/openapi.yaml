@@ -175,6 +175,29 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ResetResult"
+  /projects/{id}/delete-questions:
+    post:
+      operationId: deleteAllProjectQuestions
+      tags: [projects]
+      summary: Delete all questions in a project
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Delete result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deletedCount:
+                    type: integer
+                required:
+                  - deletedCount
   /projects/{id}/outline:
     get:
       operationId: listOutlineSections

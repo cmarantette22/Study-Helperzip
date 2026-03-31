@@ -141,6 +141,17 @@ router.get("/projects/:id/questions", async (req, res) => {
   res.json(result);
 });
 
+router.post("/projects/:id/delete-questions", async (req, res) => {
+  const id = parseInt(req.params.id, 10);
+
+  const result = await db
+    .delete(questionsTable)
+    .where(eq(questionsTable.projectId, id))
+    .returning();
+
+  res.json({ deletedCount: result.length });
+});
+
 router.post("/projects/:id/reset", async (req, res) => {
   const id = parseInt(req.params.id, 10);
   const filter = (req.query.filter as string) || "all";

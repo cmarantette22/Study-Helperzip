@@ -311,6 +311,10 @@ export const ResetProjectAnswersFilter = {
   needs_review: "needs_review",
 } as const;
 
+export type DeleteAllProjectQuestions200 = {
+  deletedCount: number;
+};
+
 export type GetQuestionStatsParams = {
   projectId?: number;
 };

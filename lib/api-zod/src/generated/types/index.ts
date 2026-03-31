@@ -26,6 +26,7 @@ export * from "./createQuestionBodyChoicesItem";
 export * from "./createUserBody";
 export * from "./deepExplainResult";
 export * from "./deepExplainResultPrinciplesItem";
+export * from "./deleteAllProjectQuestions200";
 export * from "./explainResult";
 export * from "./explainResultExplanationsItem";
 export * from "./getQuestionStatsParams";

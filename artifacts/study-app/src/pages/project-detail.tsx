@@ -7,6 +7,7 @@ import {
   useParsePdfQuestions,
   useCreateQuestion,
   useResetProjectAnswers,
+  useDeleteAllProjectQuestions,
   useListOutlineSections,
   useUploadOutline,
   useDeleteOutlineSection,
@@ -125,6 +126,20 @@ export default function ProjectDetail() {
         toast({ title: `${data.resetCount} answers cleared` });
         queryClient.invalidateQueries({ queryKey: getListProjectQuestionsQueryKey(projectId) });
         queryClient.invalidateQueries({ queryKey: getGetProjectQueryKey(projectId) });
+        queryClient.invalidateQueries({ queryKey: getListProjectsQueryKey() });
+      },
+    },
+  });
+
+  const [isDeleteAllQuestionsOpen, setIsDeleteAllQuestionsOpen] = useState(false);
+  const deleteAllQuestionsMutation = useDeleteAllProjectQuestions({
+    mutation: {
+      onSuccess: (data) => {
+        toast({ title: `${data.deletedCount} questions deleted` });
+        setIsDeleteAllQuestionsOpen(false);
+        queryClient.invalidateQueries({ queryKey: getListProjectQuestionsQueryKey(projectId) });
+        queryClient.invalidateQueries({ queryKey: getGetProjectQueryKey(projectId) });
+        queryClient.invalidateQueries({ queryKey: getGetQuestionStatsQueryKey() });
         queryClient.invalidateQueries({ queryKey: getListProjectsQueryKey() });
       },
     },
@@ -674,18 +689,31 @@ export default function ProjectDetail() {
                   ))}
                 </div>
               </div>
-              {showResetButton && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleReset}
-                  disabled={resetMutation.isPending}
-                  className="text-amber-700 border-amber-300 hover:bg-amber-50 hover:text-amber-800"
-                >
-                  {resetMutation.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RotateCcw className="w-4 h-4 mr-2" />}
-                  Reset {filterLabel}
-                </Button>
-              )}
+              <div className="flex gap-2">
+                {showResetButton && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleReset}
+                    disabled={resetMutation.isPending}
+                    className="text-amber-700 border-amber-300 hover:bg-amber-50 hover:text-amber-800"
+                  >
+                    {resetMutation.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RotateCcw className="w-4 h-4 mr-2" />}
+                    Reset {filterLabel}
+                  </Button>
+                )}
+                {questions && questions.length > 0 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsDeleteAllQuestionsOpen(true)}
+                    className="text-red-600 border-red-200 hover:bg-red-50"
+                  >
+                    <Trash2 className="w-4 h-4 mr-1" />
+                    Delete All
+                  </Button>
+                )}
+              </div>
             </div>
 
             {/* Questions List */}
@@ -784,6 +812,34 @@ export default function ProjectDetail() {
             >
               {deleteSectionMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
               Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isDeleteAllQuestionsOpen} onOpenChange={setIsDeleteAllQuestionsOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <AlertTriangle className="w-5 h-5" />
+              Delete All Questions
+            </DialogTitle>
+            <DialogDescription>
+              This will permanently delete all {project?.totalQuestions || 0} questions in this project. This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex gap-3 sm:gap-3">
+            <Button variant="outline" onClick={() => setIsDeleteAllQuestionsOpen(false)} className="flex-1">
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => deleteAllQuestionsMutation.mutate({ id: projectId })}
+              disabled={deleteAllQuestionsMutation.isPending}
+              className="flex-1"
+            >
+              {deleteAllQuestionsMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              Delete All Questions
             </Button>
           </DialogFooter>
         </DialogContent>
