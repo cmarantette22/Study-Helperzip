@@ -11,7 +11,7 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { BookOpen, BrainCircuit, Loader2, ArrowRight, Target, ListChecks, Sparkles, Plus, FolderOpen, Trash2, LogOut, Shield } from "lucide-react";
+import { BookOpen, BrainCircuit, Loader2, ArrowRight, Target, ListChecks, Sparkles, Plus, FolderOpen, Trash2, LogOut, Shield, CreditCard, User } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
@@ -82,6 +82,16 @@ export default function Home() {
                 </Button>
               </Link>
             )}
+            <Link href="/subscription">
+              <Button variant="ghost" size="sm" className="text-primary-foreground/80 hover:text-primary-foreground hover:bg-white/10">
+                <CreditCard className="w-4 h-4 mr-1" /> Subscription
+              </Button>
+            </Link>
+            <Link href="/manage-account">
+              <Button variant="ghost" size="sm" className="text-primary-foreground/80 hover:text-primary-foreground hover:bg-white/10">
+                <User className="w-4 h-4 mr-1" /> Account
+              </Button>
+            </Link>
             <Button variant="ghost" size="sm" onClick={() => logout()} className="text-primary-foreground/80 hover:text-primary-foreground hover:bg-white/10">
               <LogOut className="w-4 h-4 mr-1" /> Sign Out
             </Button>

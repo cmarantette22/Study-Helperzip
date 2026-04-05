@@ -60,19 +60,29 @@ A study app for multiple-choice questions with AI-powered features:
 - **Inline editing**: Edit question text, choices, and correct answer marking directly on the question detail page; edit outline section title and content on the section detail page
 - **User management**: Admin-created accounts with temporary passwords and forced password change on first login; role-based access (admin/user)
 - **Authentication**: Session-based auth with login, logout, and password change; auth-gated routes
+- **Subscription payments**: Stripe integration ($15/month or $100/year); monthly plans can be paused; paused accounts auto-deleted after 12 months; admin users bypass subscription gate
+- **Public signup**: Self-service account creation with plan selection via Stripe Checkout
+- **Account management**: Users can change email/password, delete their account, and manage their subscription (pause/resume/cancel)
 
 ### Database Schema
 
-- **projects**: id, name, created_at
+- **projects**: id, name, user_id (FK → users), created_at
 - **questions**: id, project_id (FK → projects, cascade delete), question_text, answered, answered_correctly, multi_select (boolean, default false), explanations (jsonb, nullable), deep_explanation (jsonb, nullable), chat_messages (jsonb, nullable), created_at
 - **choices**: id, question_id (FK → questions, cascade delete), label, text, is_correct
 - **outline_sections**: id, project_id (FK → projects, cascade delete), title, content, order_index, created_at
-- **users**: id, name, email, password_hash, role (admin/user), must_change_password, created_at
+- **users**: id, name, email, password_hash, role (admin/user), must_change_password, stripe_customer_id, stripe_subscription_id, subscription_status (none/active/paused/canceled), plan_type (monthly/annual), pause_date, created_at
+
+### Stripe Setup
+
+- **Products**: "Study Buddy" product with two prices: $15/month and $100/year
+- **Stripe connection ID**: conn_stripe_01KNFVCQQTSSHZZ6SFFQ1DB6N7
+- **Webhook events**: `customer.subscription.updated`, `customer.subscription.deleted`
+- To re-seed Stripe products: run `seed-stripe-products.ts` via code_execution sandbox using listConnections('stripe')
 
 ### API Endpoints (under /api)
 
 Projects:
-- `GET /projects` — list all projects
+- `GET /projects` — list projects for current user
 - `POST /projects` — create a new project
 - `GET /projects/:id` — get project with stats
 - `PUT /projects/:id` — rename a project

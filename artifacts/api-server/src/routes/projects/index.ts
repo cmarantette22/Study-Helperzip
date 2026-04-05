@@ -4,39 +4,45 @@ import { projectsTable, questionsTable, choicesTable } from "@workspace/db/schem
 import { eq, sql, count, and } from "drizzle-orm";
 import {
   CreateProjectBody,
-  ListProjectQuestionsParams,
-  ResetProjectAnswersParams,
 } from "@workspace/api-zod";
+import { requireAuth } from "../../middlewares/requireAuth";
 
 const router: IRouter = Router();
 
-router.get("/projects", async (_req, res) => {
+router.use(requireAuth);
+
+router.get("/projects", async (req, res) => {
+  const user = (req as any).currentUser;
+
   const projects = await db
     .select()
     .from(projectsTable)
+    .where(eq(projectsTable.userId, user.id))
     .orderBy(sql`${projectsTable.createdAt} DESC`);
 
   res.json(projects);
 });
 
 router.post("/projects", async (req, res) => {
+  const user = (req as any).currentUser;
   const body = CreateProjectBody.parse(req.body);
 
   const [project] = await db
     .insert(projectsTable)
-    .values({ name: body.name })
+    .values({ name: body.name, userId: user.id })
     .returning();
 
   res.status(201).json(project);
 });
 
 router.get("/projects/:id", async (req, res) => {
+  const user = (req as any).currentUser;
   const id = parseInt(req.params.id, 10);
 
   const [project] = await db
     .select()
     .from(projectsTable)
-    .where(eq(projectsTable.id, id));
+    .where(and(eq(projectsTable.id, id), eq(projectsTable.userId, user.id)));
 
   if (!project) {
     res.status(404).json({ error: "Project not found" });
@@ -63,13 +69,14 @@ router.get("/projects/:id", async (req, res) => {
 });
 
 router.put("/projects/:id", async (req, res) => {
+  const user = (req as any).currentUser;
   const id = parseInt(req.params.id, 10);
   const body = CreateProjectBody.parse(req.body);
 
   const [project] = await db
     .select()
     .from(projectsTable)
-    .where(eq(projectsTable.id, id));
+    .where(and(eq(projectsTable.id, id), eq(projectsTable.userId, user.id)));
 
   if (!project) {
     res.status(404).json({ error: "Project not found" });
@@ -86,12 +93,13 @@ router.put("/projects/:id", async (req, res) => {
 });
 
 router.delete("/projects/:id", async (req, res) => {
+  const user = (req as any).currentUser;
   const id = parseInt(req.params.id, 10);
 
   const [project] = await db
     .select()
     .from(projectsTable)
-    .where(eq(projectsTable.id, id));
+    .where(and(eq(projectsTable.id, id), eq(projectsTable.userId, user.id)));
 
   if (!project) {
     res.status(404).json({ error: "Project not found" });
@@ -103,8 +111,19 @@ router.delete("/projects/:id", async (req, res) => {
 });
 
 router.get("/projects/:id/questions", async (req, res) => {
+  const user = (req as any).currentUser;
   const id = parseInt(req.params.id, 10);
   const filter = (req.query.filter as string) || "all";
+
+  const [project] = await db
+    .select()
+    .from(projectsTable)
+    .where(and(eq(projectsTable.id, id), eq(projectsTable.userId, user.id)));
+
+  if (!project) {
+    res.status(404).json({ error: "Project not found" });
+    return;
+  }
 
   let conditions = [eq(questionsTable.projectId, id)];
 
@@ -142,7 +161,18 @@ router.get("/projects/:id/questions", async (req, res) => {
 });
 
 router.post("/projects/:id/delete-questions", async (req, res) => {
+  const user = (req as any).currentUser;
   const id = parseInt(req.params.id, 10);
+
+  const [project] = await db
+    .select()
+    .from(projectsTable)
+    .where(and(eq(projectsTable.id, id), eq(projectsTable.userId, user.id)));
+
+  if (!project) {
+    res.status(404).json({ error: "Project not found" });
+    return;
+  }
 
   const result = await db
     .delete(questionsTable)
@@ -153,8 +183,19 @@ router.post("/projects/:id/delete-questions", async (req, res) => {
 });
 
 router.post("/projects/:id/reset", async (req, res) => {
+  const user = (req as any).currentUser;
   const id = parseInt(req.params.id, 10);
   const filter = (req.query.filter as string) || "all";
+
+  const [project] = await db
+    .select()
+    .from(projectsTable)
+    .where(and(eq(projectsTable.id, id), eq(projectsTable.userId, user.id)));
+
+  if (!project) {
+    res.status(404).json({ error: "Project not found" });
+    return;
+  }
 
   let conditions = [eq(questionsTable.projectId, id), eq(questionsTable.answered, true)];
 

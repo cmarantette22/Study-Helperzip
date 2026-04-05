@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useLocation } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 export default function Login() {
   const { login } = useAuth();
   const { toast } = useToast();
+  const [, navigate] = useLocation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -69,6 +71,12 @@ export default function Login() {
               {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
               Sign In
             </Button>
+            <p className="text-center text-sm text-slate-500 pt-2">
+              Don't have an account?{" "}
+              <button type="button" onClick={() => navigate("/signup")} className="text-blue-600 hover:underline font-medium">
+                Sign up
+              </button>
+            </p>
           </form>
         </CardContent>
       </Card>

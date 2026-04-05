@@ -35,6 +35,9 @@ router.post("/auth/login", async (req, res) => {
       email: user.email,
       role: user.role,
       mustChangePassword: user.mustChangePassword,
+      subscriptionStatus: user.subscriptionStatus,
+      planType: user.planType,
+      pauseDate: user.pauseDate,
     });
   } catch (err) {
     console.error("Login error:", err);
@@ -65,6 +68,9 @@ router.get("/auth/me", async (req, res) => {
     email: user.email,
     role: user.role,
     mustChangePassword: user.mustChangePassword,
+    subscriptionStatus: user.subscriptionStatus,
+    planType: user.planType,
+    pauseDate: user.pauseDate,
   });
 });
 

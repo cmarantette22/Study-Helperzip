@@ -8,6 +8,9 @@ interface AuthUser {
   email: string;
   role: "admin" | "user";
   mustChangePassword: boolean;
+  subscriptionStatus?: string | null;
+  planType?: string | null;
+  pauseDate?: string | null;
 }
 
 interface AuthContextType {

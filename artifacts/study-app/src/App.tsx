@@ -9,11 +9,60 @@ import ProjectDetail from "@/pages/project-detail";
 import QuestionDetail from "@/pages/question-detail";
 import OutlineSectionDetail from "@/pages/outline-section-detail";
 import Login from "@/pages/login";
+import Signup from "@/pages/signup";
 import ChangePassword from "@/pages/change-password";
 import AdminUsers from "@/pages/admin-users";
-import { Loader2 } from "lucide-react";
+import ManageAccount from "@/pages/manage-account";
+import Subscription from "@/pages/subscription";
+import { Loader2, AlertCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useLocation } from "wouter";
 
 const queryClient = new QueryClient();
+
+function SubscriptionGate({ children }: { children: React.ReactNode }) {
+  const auth = useAuth();
+  const [, navigate] = useLocation();
+  const user = auth.user;
+
+  if (!user) return null;
+
+  if (user.role === "admin") return <>{children}</>;
+
+  const status = user.subscriptionStatus;
+
+  if (status === "paused") {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
+        <div className="max-w-md text-center">
+          <AlertCircle className="w-12 h-12 text-yellow-500 mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-slate-900 mb-2">Subscription Paused</h2>
+          <p className="text-slate-600 mb-6">
+            Your subscription is paused. Resume it to access your study materials.
+          </p>
+          <Button onClick={() => navigate("/subscription")}>Manage Subscription</Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!status || status === "none" || status === "canceled") {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
+        <div className="max-w-md text-center">
+          <AlertCircle className="w-12 h-12 text-blue-500 mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-slate-900 mb-2">Subscription Required</h2>
+          <p className="text-slate-600 mb-6">
+            A subscription is required to access Study Buddy. Choose a plan to get started.
+          </p>
+          <Button onClick={() => navigate("/subscription")}>View Plans</Button>
+        </div>
+      </div>
+    );
+  }
+
+  return <>{children}</>;
+}
 
 function AppRoutes() {
   const { user, isLoading } = useAuth();
@@ -27,7 +76,12 @@ function AppRoutes() {
   }
 
   if (!user) {
-    return <Login />;
+    return (
+      <Switch>
+        <Route path="/signup" component={Signup} />
+        <Route component={Login} />
+      </Switch>
+    );
   }
 
   if (user.mustChangePassword) {
@@ -36,12 +90,20 @@ function AppRoutes() {
 
   return (
     <Switch>
-      <Route path="/" component={Home} />
-      <Route path="/project/:id" component={ProjectDetail} />
-      <Route path="/project/:id/outline/:sectionId" component={OutlineSectionDetail} />
-      <Route path="/question/:id" component={QuestionDetail} />
+      <Route path="/subscription" component={Subscription} />
+      <Route path="/manage-account" component={ManageAccount} />
       <Route path="/admin/users" component={AdminUsers} />
-      <Route component={NotFound} />
+      <Route>
+        <SubscriptionGate>
+          <Switch>
+            <Route path="/" component={Home} />
+            <Route path="/project/:id" component={ProjectDetail} />
+            <Route path="/project/:id/outline/:sectionId" component={OutlineSectionDetail} />
+            <Route path="/question/:id" component={QuestionDetail} />
+            <Route component={NotFound} />
+          </Switch>
+        </SubscriptionGate>
+      </Route>
     </Switch>
   );
 }

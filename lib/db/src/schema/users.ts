@@ -10,6 +10,11 @@ export const usersTable = pgTable("users", {
   role: text("role").notNull().default("user"),
   mustChangePassword: boolean("must_change_password").notNull().default(true),
   createdAt: timestamp("created_at").notNull().defaultNow(),
+  stripeCustomerId: text("stripe_customer_id"),
+  stripeSubscriptionId: text("stripe_subscription_id"),
+  planType: text("plan_type"),
+  subscriptionStatus: text("subscription_status"),
+  pauseDate: timestamp("pause_date"),
 });
 
 export const insertUserSchema = createInsertSchema(usersTable).omit({ id: true, createdAt: true });
