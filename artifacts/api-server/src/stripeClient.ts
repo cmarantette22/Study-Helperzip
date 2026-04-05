@@ -38,9 +38,12 @@ export async function getStripeSync(): Promise<StripeSync> {
   const databaseUrl = process.env.DATABASE_URL;
   if (!databaseUrl) throw new Error("DATABASE_URL is required");
 
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
   stripeSyncInstance = new StripeSync({
     stripeSecretKey: secret,
     poolConfig: { connectionString: databaseUrl },
+    ...(webhookSecret ? { stripeWebhookSecret: webhookSecret } : {}),
   });
 
   return stripeSyncInstance;
