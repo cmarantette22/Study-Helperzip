@@ -1,0 +1,127 @@
+You are a senior full-stack engineer. I already have a working StudyBuddy app. Your job is to EXTEND it without breaking existing functionality.
+
+IMPORTANT:
+- Do NOT rewrite the entire app
+- Only add or modify what is necessary
+- Preserve existing routes, UI, and database where possible
+
+GOALS:
+
+1. USER ACCOUNT ISOLATION
+
+Ensure every user has their own data:
+- Associate all existing data (projects, questions, etc.) with a user_id
+- Enforce that users can ONLY access their own data
+- Update backend queries to filter by authenticated user_id
+- Add middleware to enforce authentication on protected routes
+
+If a user system already exists:
+- Extend it (do not replace it)
+
+---
+
+2. STRIPE SUBSCRIPTION INTEGRATION
+
+Integrate Stripe using an existing Stripe account.
+
+Plans:
+
+A. Monthly Plan ($15/month)
+- No proration
+- Users can pause and resume anytime
+- When paused:
+  - No billing occurs
+  - Save pause_date
+- If paused for 12 months:
+  - Automatically delete the account (implement backend logic or cron job)
+
+B. Annual Plan ($100/year)
+- No refunds
+- No pause option
+
+Store in database:
+- stripe_customer_id
+- stripe_subscription_id
+- plan_type (monthly | annual)
+- subscription_status (active | paused | canceled)
+- pause_date
+
+---
+
+3. STRIPE FEATURES
+
+- Create checkout session for plan selection
+- Implement Stripe webhooks:
+  - checkout.session.completed
+  - customer.subscription.updated
+  - customer.subscription.deleted
+- Sync subscription status with your database
+
+---
+
+4. NEW / UPDATED UI PAGES
+
+A. Sign-Up Page
+- Add plan selection (monthly or annual)
+- After signup → redirect to Stripe Checkout
+
+B. Manage Account Page
+- Update email/password
+- Delete account
+
+C. Subscription Page
+- Display:
+  - Current plan
+  - Subscription status
+  - Renewal date
+- Actions:
+  - Pause subscription (monthly only)
+  - Resume subscription
+  - Cancel subscription
+  - Open Stripe billing portal
+
+---
+
+5. BACKEND ENDPOINTS (ADD ONLY IF NOT EXISTING)
+
+- POST /create-checkout-session
+- POST /stripe-webhook
+- POST /pause-subscription
+- POST /resume-subscription
+
+---
+
+6. ACCESS CONTROL
+
+- If subscription is not active:
+  - Restrict core app features
+- If paused:
+  - Allow login but restrict usage (optional: read-only mode)
+
+---
+
+7. AUTOMATION
+
+- Implement a scheduled job:
+  - If pause_date is older than 12 months → delete user + all associated data
+
+---
+
+8. EDGE CASES
+
+- Prevent annual users from pausing
+- Handle failed Stripe payments
+- Ensure webhook idempotency
+- Prevent duplicate subscriptions
+
+---
+
+9. OUTPUT FORMAT
+
+Show ONLY:
+1. Files that need to be added or changed
+2. Code snippets with clear comments
+3. Database migrations (if needed)
+4. Where each change should go
+
+Do NOT rewrite the entire codebase.
