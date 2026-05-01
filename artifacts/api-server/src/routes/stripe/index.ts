@@ -4,7 +4,8 @@ import { getUncachableStripeClient } from "../../stripeClient";
 import { stripeStorage } from "../../stripe-storage";
 import { db } from "@workspace/db";
 import { usersTable } from "@workspace/db/schema";
-import { eq, sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
+
 
 const router: IRouter = Router();
 
@@ -204,17 +205,36 @@ router.post("/stripe/portal", async (req, res) => {
 
 router.get("/stripe/prices", async (_req, res) => {
   try {
-    const result = await db.execute(
-      sql`
-        SELECT p.id as product_id, p.name, p.description,
-               pr.id as price_id, pr.unit_amount, pr.currency, pr.recurring, pr.metadata
-        FROM stripe.products p
-        JOIN stripe.prices pr ON pr.product = p.id AND pr.active = true
-        WHERE p.active = true
-        ORDER BY pr.unit_amount ASC
-      `
-    );
-    res.json({ data: result.rows });
+    const stripe = await getUncachableStripeClient();
+
+    const products = await stripe.products.list({ active: true, limit: 10 });
+    const studyBuddyProduct = products.data.find((p) => p.name === "Study Buddy");
+
+    if (!studyBuddyProduct) {
+      res.json({ data: [] });
+      return;
+    }
+
+    const prices = await stripe.prices.list({
+      product: studyBuddyProduct.id,
+      active: true,
+      limit: 10,
+    });
+
+    const rows = prices.data.map((pr) => ({
+      product_id: studyBuddyProduct.id,
+      name: studyBuddyProduct.name,
+      description: studyBuddyProduct.description,
+      price_id: pr.id,
+      unit_amount: pr.unit_amount,
+      currency: pr.currency,
+      recurring: pr.recurring,
+      metadata: pr.metadata,
+    }));
+
+    rows.sort((a, b) => (a.unit_amount ?? 0) - (b.unit_amount ?? 0));
+
+    res.json({ data: rows });
   } catch (err) {
     console.error("Prices error:", err);
     res.status(500).json({ error: "Failed to fetch prices" });
