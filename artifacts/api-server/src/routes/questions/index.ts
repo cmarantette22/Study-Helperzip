@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
-import { questionsTable, choicesTable } from "@workspace/db/schema";
-import { eq, sql, count, and } from "drizzle-orm";
+import { questionsTable, choicesTable, projectsTable } from "@workspace/db/schema";
+import { eq, sql, count, and, inArray } from "drizzle-orm";
 import { openai } from "@workspace/integrations-openai-ai-server";
 import {
   CreateQuestionBody,
@@ -12,13 +12,31 @@ import {
   ChatAboutQuestionBody,
 } from "@workspace/api-zod";
 import { extractText } from "unpdf";
+import { requireAuth } from "../../middlewares/requireAuth";
 
 const router: IRouter = Router();
 
-router.get("/questions", async (_req, res) => {
+router.use(requireAuth);
+
+router.get("/questions", async (req, res) => {
+  const user = (req as any).currentUser;
+
+  const userProjects = await db
+    .select({ id: projectsTable.id })
+    .from(projectsTable)
+    .where(eq(projectsTable.userId, user.id));
+
+  const projectIds = userProjects.map((p) => p.id);
+
+  if (projectIds.length === 0) {
+    res.json([]);
+    return;
+  }
+
   const questions = await db
     .select()
     .from(questionsTable)
+    .where(inArray(questionsTable.projectId, projectIds))
     .orderBy(sql`${questionsTable.createdAt} DESC`);
 
   const questionIds = questions.map((q) => q.id);
@@ -252,20 +270,47 @@ Important rules:
 });
 
 router.get("/questions/stats", async (req, res) => {
+  const user = (req as any).currentUser;
   const projectIdParam = req.query.projectId as string | undefined;
   const projectId = projectIdParam ? parseInt(projectIdParam, 10) : null;
 
-  const baseCondition = projectId ? eq(questionsTable.projectId, projectId) : undefined;
+  let baseCondition;
+
+  if (projectId) {
+    const [project] = await db
+      .select()
+      .from(projectsTable)
+      .where(and(eq(projectsTable.id, projectId), eq(projectsTable.userId, user.id)));
+
+    if (!project) {
+      res.status(404).json({ error: "Project not found" });
+      return;
+    }
+    baseCondition = eq(questionsTable.projectId, projectId);
+  } else {
+    const userProjects = await db
+      .select({ id: projectsTable.id })
+      .from(projectsTable)
+      .where(eq(projectsTable.userId, user.id));
+
+    const projectIds = userProjects.map((p) => p.id);
+
+    if (projectIds.length === 0) {
+      res.json({ totalQuestions: 0, answeredQuestions: 0, correctAnswers: 0, incorrectAnswers: 0, accuracyPercent: 0 });
+      return;
+    }
+    baseCondition = inArray(questionsTable.projectId, projectIds);
+  }
 
   const totalResult = await db.select({ value: count() }).from(questionsTable).where(baseCondition);
   const answeredResult = await db
     .select({ value: count() })
     .from(questionsTable)
-    .where(baseCondition ? and(baseCondition, eq(questionsTable.answered, true)) : eq(questionsTable.answered, true));
+    .where(and(baseCondition, eq(questionsTable.answered, true)));
   const correctResult = await db
     .select({ value: count() })
     .from(questionsTable)
-    .where(baseCondition ? and(baseCondition, eq(questionsTable.answeredCorrectly, true)) : eq(questionsTable.answeredCorrectly, true));
+    .where(and(baseCondition, eq(questionsTable.answeredCorrectly, true)));
 
   const total = totalResult[0]?.value ?? 0;
   const answered = answeredResult[0]?.value ?? 0;
