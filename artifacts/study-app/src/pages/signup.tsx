@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, BookOpen, Check } from "lucide-react";
+import { Loader2, BookOpen, Check, Tag } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth-context";
 
@@ -36,6 +36,7 @@ export default function Signup() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [selectedPlan, setSelectedPlan] = useState<"monthly" | "annual">("monthly");
+  const [couponCode, setCouponCode] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -75,10 +76,13 @@ export default function Signup() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ priceId: price.price_id, planType: selectedPlan }),
+        body: JSON.stringify({ priceId: price.price_id, planType: selectedPlan, couponCode: couponCode.trim() || undefined }),
       });
 
       const checkoutData = await checkoutRes.json();
+      if (!checkoutRes.ok) {
+        throw new Error(checkoutData.error || "Failed to create checkout session");
+      }
       if (checkoutData.url) {
         window.location.href = checkoutData.url;
       } else {
@@ -118,6 +122,20 @@ export default function Signup() {
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
                 <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="At least 6 characters" className="h-11" required minLength={6} />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="coupon">Promo Code <span className="text-slate-400 font-normal">(optional)</span></Label>
+                <div className="relative">
+                  <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <Input
+                    id="coupon"
+                    value={couponCode}
+                    onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                    placeholder="ENTER CODE"
+                    className="h-11 pl-9 tracking-widest uppercase font-mono placeholder:normal-case placeholder:font-sans placeholder:tracking-normal"
+                  />
+                </div>
               </div>
 
               <div className="space-y-3">

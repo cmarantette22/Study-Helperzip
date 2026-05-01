@@ -36,7 +36,7 @@ router.get("/stripe/subscription", async (req, res) => {
 router.post("/stripe/checkout", async (req, res) => {
   try {
     const user = (req as any).currentUser;
-    const { priceId, planType } = req.body;
+    const { priceId, planType, couponCode } = req.body;
 
     if (!priceId || !planType) {
       res.status(400).json({ error: "priceId and planType are required" });
@@ -68,7 +68,22 @@ router.post("/stripe/checkout", async (req, res) => {
 
     const baseUrl = `https://${process.env.REPLIT_DOMAINS?.split(",")[0]}`;
 
-    const session = await stripe.checkout.sessions.create({
+    // Resolve coupon code to a Stripe promotion code ID
+    let promotionCodeId: string | null = null;
+    if (couponCode && couponCode.trim()) {
+      const promoCodes = await stripe.promotionCodes.list({
+        code: couponCode.trim().toUpperCase(),
+        active: true,
+        limit: 1,
+      });
+      if (promoCodes.data.length === 0) {
+        res.status(400).json({ error: "Invalid or expired coupon code" });
+        return;
+      }
+      promotionCodeId = promoCodes.data[0].id;
+    }
+
+    const sessionParams: any = {
       customer: customerId,
       payment_method_types: ["card"],
       line_items: [{ price: priceId, quantity: 1 }],
@@ -76,7 +91,15 @@ router.post("/stripe/checkout", async (req, res) => {
       success_url: `${baseUrl}/?checkout=success`,
       cancel_url: `${baseUrl}/subscription?checkout=canceled`,
       metadata: { userId: String(user.id), planType },
-    });
+    };
+
+    if (promotionCodeId) {
+      sessionParams.discounts = [{ promotion_code: promotionCodeId }];
+    } else {
+      sessionParams.allow_promotion_codes = true;
+    }
+
+    const session = await stripe.checkout.sessions.create(sessionParams);
 
     res.json({ url: session.url });
   } catch (err) {
