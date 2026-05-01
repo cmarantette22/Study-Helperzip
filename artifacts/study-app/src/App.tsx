@@ -97,7 +97,12 @@ function SubscriptionGate({ children }: { children: React.ReactNode }) {
           <p className="text-slate-600 mb-6">
             Your subscription is paused. Resume it to access your study materials.
           </p>
-          <Button onClick={() => navigate("/subscription")}>Manage Subscription</Button>
+          <div className="flex flex-col gap-3">
+            <Button onClick={() => navigate("/subscription")}>Manage Subscription</Button>
+            <Button variant="ghost" className="text-slate-500 text-sm" onClick={() => auth.logout()}>
+              Sign out
+            </Button>
+          </div>
         </div>
       </div>
     );
@@ -112,7 +117,12 @@ function SubscriptionGate({ children }: { children: React.ReactNode }) {
           <p className="text-slate-600 mb-6">
             A subscription is required to access Study Buddy. Choose a plan to get started.
           </p>
-          <Button onClick={() => navigate("/subscription")}>View Plans</Button>
+          <div className="flex flex-col gap-3">
+            <Button onClick={() => navigate("/subscription")}>View Plans</Button>
+            <Button variant="ghost" className="text-slate-500 text-sm" onClick={() => auth.logout()}>
+              Sign out
+            </Button>
+          </div>
         </div>
       </div>
     );
@@ -121,8 +131,27 @@ function SubscriptionGate({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+function LogoutPage() {
+  const { logout } = useAuth();
+  useEffect(() => {
+    logout().finally(() => {
+      window.location.replace(import.meta.env.BASE_URL || "/");
+    });
+  }, []);
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50">
+      <Loader2 className="w-8 h-8 animate-spin text-primary" />
+    </div>
+  );
+}
+
 function AppRoutes() {
   const { user, isLoading } = useAuth();
+
+  // /logout always works regardless of auth state
+  if (window.location.pathname.endsWith("/logout")) {
+    return <LogoutPage />;
+  }
 
   if (isLoading) {
     return (
@@ -147,6 +176,7 @@ function AppRoutes() {
 
   return (
     <Switch>
+      <Route path="/logout" component={LogoutPage} />
       <Route path="/subscription" component={Subscription} />
       <Route path="/manage-account" component={ManageAccount} />
       <Route path="/admin/users" component={AdminUsers} />
