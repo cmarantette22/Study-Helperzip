@@ -59,7 +59,7 @@ app.use(
   session({
     store: new PgSession({
       conString: process.env.DATABASE_URL,
-      createTableIfMissing: true,
+      createTableIfMissing: false,
     }),
     secret: process.env.SESSION_SECRET || "study-buddy-secret",
     resave: false,
