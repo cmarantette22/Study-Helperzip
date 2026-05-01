@@ -102,9 +102,13 @@ router.post("/stripe/checkout", async (req, res) => {
     const session = await stripe.checkout.sessions.create(sessionParams);
 
     res.json({ url: session.url });
-  } catch (err) {
+  } catch (err: any) {
     console.error("Checkout error:", err);
-    res.status(500).json({ error: "Failed to create checkout session" });
+    if (err?.code === "email_invalid") {
+      res.status(400).json({ error: "Your account email address is not valid. Please contact support or delete your account and sign up again with a valid email." });
+    } else {
+      res.status(500).json({ error: "Failed to create checkout session" });
+    }
   }
 });
 
