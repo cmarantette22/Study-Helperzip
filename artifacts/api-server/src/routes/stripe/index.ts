@@ -108,6 +108,54 @@ router.post("/stripe/checkout", async (req, res) => {
   }
 });
 
+router.post("/stripe/checkout-complete", async (req, res) => {
+  try {
+    const user = (req as any).currentUser;
+    const stripe = await getUncachableStripeClient();
+
+    if (!user.stripeCustomerId) {
+      res.status(400).json({ error: "No Stripe customer found" });
+      return;
+    }
+
+    const subscriptions = await stripe.subscriptions.list({
+      customer: user.stripeCustomerId,
+      status: "active",
+      limit: 1,
+      expand: ["data.items.data.price"],
+    });
+
+    if (subscriptions.data.length === 0) {
+      res.status(400).json({ error: "No active subscription found" });
+      return;
+    }
+
+    const sub = subscriptions.data[0];
+    const interval = (sub.items.data[0]?.price as any)?.recurring?.interval;
+    const planType = interval === "year" ? "annual" : "monthly";
+
+    const updated = await stripeStorage.updateUserStripeInfo(user.id, {
+      stripeSubscriptionId: sub.id,
+      subscriptionStatus: "active",
+      planType,
+      pauseDate: null,
+    });
+
+    res.json({
+      id: updated.id,
+      name: updated.name,
+      email: updated.email,
+      role: updated.role,
+      subscriptionStatus: updated.subscriptionStatus,
+      planType: updated.planType,
+      mustChangePassword: updated.mustChangePassword,
+    });
+  } catch (err) {
+    console.error("Checkout complete error:", err);
+    res.status(500).json({ error: "Failed to sync subscription" });
+  }
+});
+
 router.post("/stripe/pause", async (req, res) => {
   try {
     const user = (req as any).currentUser;

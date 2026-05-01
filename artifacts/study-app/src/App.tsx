@@ -17,17 +17,74 @@ import Subscription from "@/pages/subscription";
 import { Loader2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
+import { useEffect, useState } from "react";
 
+const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 const queryClient = new QueryClient();
 
 function SubscriptionGate({ children }: { children: React.ReactNode }) {
   const auth = useAuth();
   const [, navigate] = useLocation();
   const user = auth.user;
+  const [syncing, setSyncing] = useState(false);
+  const [syncError, setSyncError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("checkout") !== "success") return;
+    if (!user || user.role === "admin" || user.subscriptionStatus === "active") {
+      // Already active or no sync needed — just clean up the URL
+      window.history.replaceState({}, "", window.location.pathname);
+      return;
+    }
+
+    setSyncing(true);
+    fetch(`${BASE}/api/stripe/checkout-complete`, {
+      method: "POST",
+      credentials: "include",
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.error) {
+          setSyncError(data.error);
+        } else {
+          auth.refetchUser();
+        }
+      })
+      .catch(() => setSyncError("Could not confirm your subscription. Please refresh."))
+      .finally(() => {
+        setSyncing(false);
+        window.history.replaceState({}, "", window.location.pathname);
+      });
+  }, []);
 
   if (!user) return null;
-
   if (user.role === "admin") return <>{children}</>;
+
+  if (syncing) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
+        <div className="max-w-md text-center">
+          <Loader2 className="w-12 h-12 text-blue-500 mx-auto mb-4 animate-spin" />
+          <h2 className="text-xl font-bold text-slate-900 mb-2">Confirming your subscription…</h2>
+          <p className="text-slate-600">Just a moment while we activate your account.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (syncError) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
+        <div className="max-w-md text-center">
+          <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-slate-900 mb-2">Payment received — activation pending</h2>
+          <p className="text-slate-600 mb-6">{syncError}</p>
+          <Button onClick={() => window.location.reload()}>Refresh</Button>
+        </div>
+      </div>
+    );
+  }
 
   const status = user.subscriptionStatus;
 
