@@ -168,6 +168,37 @@ router.put("/account/password", requireAuth, async (req, res) => {
   }
 });
 
+router.put("/account/profile", requireAuth, async (req, res) => {
+  try {
+    const user = (req as any).currentUser;
+    const { school, bio, avatar } = req.body;
+
+    const updates: Record<string, string | null> = {};
+    if (school !== undefined) updates.school = school?.trim() || null;
+    if (bio !== undefined) updates.bio = bio?.trim() || null;
+    if (avatar !== undefined) updates.avatar = avatar?.trim() || null;
+
+    const [updated] = await db
+      .update(usersTable)
+      .set(updates)
+      .where(eq(usersTable.id, user.id))
+      .returning();
+
+    res.json({
+      id: updated.id,
+      name: updated.name,
+      email: updated.email,
+      handle: updated.handle,
+      school: updated.school,
+      bio: updated.bio,
+      avatar: updated.avatar,
+    });
+  } catch (err) {
+    console.error("Update profile error:", err);
+    res.status(500).json({ error: "Failed to update profile" });
+  }
+});
+
 router.delete("/account", requireAuth, async (req, res) => {
   try {
     const user = (req as any).currentUser;

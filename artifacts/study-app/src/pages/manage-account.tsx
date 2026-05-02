@@ -4,7 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, ArrowLeft, Mail, Lock, Trash2 } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Loader2, ArrowLeft, Mail, Lock, Trash2, User, AtSign } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth-context";
 import {
@@ -22,15 +24,49 @@ import {
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 export default function ManageAccount() {
-  const { user, logout } = useAuth();
+  const { user, refetchUser, logout } = useAuth();
   const { toast } = useToast();
   const [, navigate] = useLocation();
 
+  const [profileForm, setProfileForm] = useState({
+    school: user?.school || "",
+    bio: user?.bio || "",
+    avatar: user?.avatar || "",
+  });
   const [emailForm, setEmailForm] = useState({ email: user?.email || "", password: "" });
   const [passwordForm, setPasswordForm] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
+  const [profileLoading, setProfileLoading] = useState(false);
   const [emailLoading, setEmailLoading] = useState(false);
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
+
+  const initials = (user?.name || "?")
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+
+  const handleUpdateProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setProfileLoading(true);
+    try {
+      const res = await fetch(`${BASE}/api/account/profile`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(profileForm),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to update profile");
+      await refetchUser();
+      toast({ title: "Profile updated" });
+    } catch (err: any) {
+      toast({ title: err.message, variant: "destructive" });
+    } finally {
+      setProfileLoading(false);
+    }
+  };
 
   const handleUpdateEmail = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -103,6 +139,94 @@ export default function ManageAccount() {
 
         <h1 className="text-2xl font-bold text-slate-900 mb-6">Manage Account</h1>
 
+        {/* Profile Card */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <User className="w-4 h-4" /> Public Profile
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-4 mb-6 p-4 bg-slate-50 rounded-xl">
+              <Avatar className="w-16 h-16">
+                <AvatarImage src={profileForm.avatar || undefined} alt={user?.name} />
+                <AvatarFallback className="text-lg font-semibold bg-primary/10 text-primary">
+                  {initials}
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <p className="font-semibold text-slate-900">{user?.name}</p>
+                {user?.handle && (
+                  <p className="text-sm text-primary/80 flex items-center gap-1 mt-0.5">
+                    <AtSign className="w-3.5 h-3.5" />
+                    {user.handle}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <form onSubmit={handleUpdateProfile} className="space-y-4">
+              {user?.handle && (
+                <div className="space-y-2">
+                  <Label>Username</Label>
+                  <div className="relative">
+                    <AtSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <Input
+                      value={user.handle}
+                      readOnly
+                      className="h-10 pl-9 bg-slate-50 text-slate-500 cursor-not-allowed"
+                    />
+                  </div>
+                  <p className="text-xs text-slate-400">Username cannot be changed after signup.</p>
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <Label htmlFor="avatar">Avatar URL <span className="text-slate-400 font-normal">(optional)</span></Label>
+                <Input
+                  id="avatar"
+                  type="url"
+                  value={profileForm.avatar}
+                  onChange={(e) => setProfileForm((f) => ({ ...f, avatar: e.target.value }))}
+                  placeholder="https://example.com/photo.jpg"
+                  className="h-10"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="school">School / Program <span className="text-slate-400 font-normal">(optional)</span></Label>
+                <Input
+                  id="school"
+                  value={profileForm.school}
+                  onChange={(e) => setProfileForm((f) => ({ ...f, school: e.target.value }))}
+                  placeholder="e.g. State University — Computer Science"
+                  className="h-10"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="bio">About Me <span className="text-slate-400 font-normal">(optional)</span></Label>
+                <Textarea
+                  id="bio"
+                  value={profileForm.bio}
+                  onChange={(e) => setProfileForm((f) => ({ ...f, bio: e.target.value }))}
+                  placeholder="Tell the community a bit about yourself…"
+                  className="resize-none"
+                  rows={3}
+                  maxLength={300}
+                />
+                <p className="text-xs text-slate-400 text-right">{profileForm.bio.length}/300</p>
+              </div>
+
+              <Button type="submit" disabled={profileLoading} size="sm">
+                {profileLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                Save Profile
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+
+        {/* Email Card */}
         <Card className="mb-6">
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
@@ -142,6 +266,7 @@ export default function ManageAccount() {
           </CardContent>
         </Card>
 
+        {/* Password Card */}
         <Card className="mb-6">
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
@@ -193,6 +318,7 @@ export default function ManageAccount() {
           </CardContent>
         </Card>
 
+        {/* Delete Card */}
         <Card className="border-red-200">
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2 text-red-600">

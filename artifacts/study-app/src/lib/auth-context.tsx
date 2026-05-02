@@ -11,6 +11,10 @@ interface AuthUser {
   subscriptionStatus?: string | null;
   planType?: string | null;
   pauseDate?: string | null;
+  handle?: string | null;
+  school?: string | null;
+  avatar?: string | null;
+  bio?: string | null;
 }
 
 interface AuthContextType {

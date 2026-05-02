@@ -72,6 +72,10 @@ router.get("/auth/me", async (req, res) => {
     subscriptionStatus: user.subscriptionStatus,
     planType: user.planType,
     pauseDate: user.pauseDate,
+    handle: user.handle,
+    school: user.school,
+    avatar: user.avatar,
+    bio: user.bio,
   });
 });
 
