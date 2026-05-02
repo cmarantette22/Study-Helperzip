@@ -91,8 +91,7 @@ export default function Signup() {
       const price = prices.find((p: any) => p.recurring?.interval === targetInterval);
 
       if (!price) {
-        toast({ title: "Account created! Please subscribe from the subscription page.", variant: "default" });
-        navigate("/subscription");
+        navigate(`/subscription?plan=${selectedPlan}`);
         return;
       }
 

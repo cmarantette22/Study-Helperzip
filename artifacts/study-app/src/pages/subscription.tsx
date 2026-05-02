@@ -61,6 +61,15 @@ export default function Subscription() {
     }
   }, []);
 
+  // Auto-trigger checkout when redirected from signup with a plan pre-selected
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const plan = params.get("plan");
+    if ((plan === "monthly" || plan === "annual") && prices.length > 0 && !isLoading) {
+      startCheckout(plan);
+    }
+  }, [prices, isLoading]);
+
   async function fetchSubscription() {
     try {
       const res = await fetch(`${BASE}/api/stripe/subscription`, { credentials: "include" });
