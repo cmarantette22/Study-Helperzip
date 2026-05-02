@@ -801,6 +801,9 @@ components:
       properties:
         id:
           type: integer
+        questionNumber:
+          type: integer
+          nullable: true
         projectId:
           type: integer
           nullable: true

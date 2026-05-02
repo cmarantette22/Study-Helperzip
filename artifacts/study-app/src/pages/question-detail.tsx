@@ -354,7 +354,7 @@ export default function QuestionDetail() {
             <>
             <div className="mb-8">
               <Badge variant="outline" className="mb-3 text-primary border-primary/20 bg-primary/5 px-2.5 py-0.5 text-xs font-medium uppercase tracking-widest">
-                Question {question.id}
+                Question {question.questionNumber ?? question.id}
               </Badge>
               {isMultiSelect && (
                 <Badge variant="outline" className="mb-3 ml-2 text-amber-700 border-amber-300 bg-amber-50 px-2.5 py-0.5 text-xs font-medium uppercase tracking-widest">

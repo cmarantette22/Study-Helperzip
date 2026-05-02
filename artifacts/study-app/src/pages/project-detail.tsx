@@ -743,12 +743,15 @@ export default function ProjectDetail() {
               </div>
             ) : (
               <div className="grid gap-4">
-                {questions?.map((q) => (
+                {questions?.map((q, index) => (
                   <Link key={q.id} href={`/question/${q.id}`}>
                     <Card className="hover:border-primary/40 transition-all hover:shadow-md cursor-pointer group shadow-sm border-border bg-card rounded-xl">
                       <CardContent className="p-6 flex items-start gap-5">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-3 mb-3">
+                            <span className="text-xs font-semibold text-muted-foreground tabular-nums">
+                              Q{q.questionNumber ?? (questions.length - index)}
+                            </span>
                             {q.answered ? (
                               <Badge
                                 variant={q.answeredCorrectly ? "default" : "destructive"}

@@ -169,8 +169,16 @@ router.get("/projects/:id/questions", async (req, res) => {
       .where(sql`${choicesTable.questionId} IN (${sql.join(questionIds.map(id => sql`${id}`), sql`, `)})`);
   }
 
+  // Compute stable per-project question numbers (oldest = #1) across ALL project questions
+  const numberedRows = await db.execute<{ id: number; question_number: string }>(
+    sql`SELECT id, ROW_NUMBER() OVER (ORDER BY created_at ASC, id ASC) AS question_number
+        FROM questions WHERE project_id = ${id}`
+  );
+  const numberMap = new Map(numberedRows.rows.map((r) => [Number(r.id), Number(r.question_number)]));
+
   const result = questions.map((q) => ({
     ...q,
+    questionNumber: numberMap.get(q.id) ?? null,
     choices: choices.filter((c) => c.questionId === q.id),
   }));
 

@@ -344,7 +344,19 @@ router.get("/questions/:id", async (req, res) => {
     .from(choicesTable)
     .where(eq(choicesTable.questionId, id));
 
-  res.json({ ...question, choices });
+  // Compute the stable per-project question number for this question
+  let questionNumber: number | null = null;
+  if (question.projectId) {
+    const [row] = await db.execute<{ question_number: string }>(
+      sql`SELECT question_number FROM (
+            SELECT id, ROW_NUMBER() OVER (ORDER BY created_at ASC, id ASC) AS question_number
+            FROM questions WHERE project_id = ${question.projectId}
+          ) numbered WHERE id = ${id}`
+    );
+    if (row) questionNumber = Number(row.question_number);
+  }
+
+  res.json({ ...question, questionNumber, choices });
 });
 
 router.put("/questions/:id", async (req, res) => {
