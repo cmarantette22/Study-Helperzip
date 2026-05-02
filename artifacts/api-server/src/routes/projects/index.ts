@@ -1,18 +1,21 @@
-import { Router, type IRouter } from "express";
+import { Router, type IRouter, type Request } from "express";
 import { db } from "@workspace/db";
-import { projectsTable, questionsTable, choicesTable } from "@workspace/db/schema";
+import { projectsTable, questionsTable, choicesTable, usersTable } from "@workspace/db/schema";
 import { eq, sql, count, and } from "drizzle-orm";
+import type { InferInsertModel, InferSelectModel } from "drizzle-orm";
 import {
   CreateProjectBody,
 } from "@workspace/api-zod";
 import { requireAuth } from "../../middlewares/requireAuth";
+
+type AuthedRequest = Request & { currentUser: InferSelectModel<typeof usersTable> };
 
 const router: IRouter = Router();
 
 router.use(requireAuth);
 
 router.get("/projects", async (req, res) => {
-  const user = (req as any).currentUser;
+  const user = (req as unknown as AuthedRequest).currentUser;
 
   const projects = await db
     .select()
@@ -26,7 +29,7 @@ router.get("/projects", async (req, res) => {
 const FREE_TIER_PROJECT_LIMIT = 12;
 
 router.post("/projects", async (req, res) => {
-  const user = (req as any).currentUser;
+  const user = (req as unknown as AuthedRequest).currentUser;
   const body = CreateProjectBody.parse(req.body);
 
   if (user.subscriptionStatus === "free") {
@@ -44,23 +47,27 @@ router.post("/projects", async (req, res) => {
     }
   }
 
-  const insertValues: Record<string, any> = { name: body.name, userId: user.id };
-  if (body.course !== undefined) insertValues.course = body.course;
-  if (body.term !== undefined) insertValues.term = body.term;
-  if (body.year !== undefined) insertValues.year = body.year;
-  if (body.school !== undefined) insertValues.school = body.school;
-  if (body.description !== undefined) insertValues.description = body.description;
+  type ProjectInsert = InferInsertModel<typeof projectsTable>;
+  const insertValues: ProjectInsert = {
+    name: body.name,
+    userId: user.id,
+    ...(body.course !== undefined ? { course: body.course } : {}),
+    ...(body.term !== undefined ? { term: body.term } : {}),
+    ...(body.year !== undefined ? { year: body.year } : {}),
+    ...(body.school !== undefined ? { school: body.school } : {}),
+    ...(body.description !== undefined ? { description: body.description } : {}),
+  };
 
   const [project] = await db
     .insert(projectsTable)
-    .values(insertValues as any)
+    .values(insertValues)
     .returning();
 
   res.status(201).json(project);
 });
 
 router.get("/projects/:id", async (req, res) => {
-  const user = (req as any).currentUser;
+  const user = (req as unknown as AuthedRequest).currentUser;
   const id = parseInt(req.params.id, 10);
 
   const [project] = await db
@@ -93,7 +100,7 @@ router.get("/projects/:id", async (req, res) => {
 });
 
 router.put("/projects/:id", async (req, res) => {
-  const user = (req as any).currentUser;
+  const user = (req as unknown as AuthedRequest).currentUser;
   const id = parseInt(req.params.id, 10);
   const body = CreateProjectBody.parse(req.body);
 
@@ -124,7 +131,7 @@ router.put("/projects/:id", async (req, res) => {
 });
 
 router.delete("/projects/:id", async (req, res) => {
-  const user = (req as any).currentUser;
+  const user = (req as unknown as AuthedRequest).currentUser;
   const id = parseInt(req.params.id, 10);
 
   const [project] = await db
@@ -142,7 +149,7 @@ router.delete("/projects/:id", async (req, res) => {
 });
 
 router.get("/projects/:id/questions", async (req, res) => {
-  const user = (req as any).currentUser;
+  const user = (req as unknown as AuthedRequest).currentUser;
   const id = parseInt(req.params.id, 10);
   const filter = (req.query.filter as string) || "all";
 
@@ -200,7 +207,7 @@ router.get("/projects/:id/questions", async (req, res) => {
 });
 
 router.post("/projects/:id/delete-questions", async (req, res) => {
-  const user = (req as any).currentUser;
+  const user = (req as unknown as AuthedRequest).currentUser;
   const id = parseInt(req.params.id, 10);
 
   const [project] = await db
@@ -222,7 +229,7 @@ router.post("/projects/:id/delete-questions", async (req, res) => {
 });
 
 router.post("/projects/:id/reset", async (req, res) => {
-  const user = (req as any).currentUser;
+  const user = (req as unknown as AuthedRequest).currentUser;
   const id = parseInt(req.params.id, 10);
   const filter = (req.query.filter as string) || "all";
 

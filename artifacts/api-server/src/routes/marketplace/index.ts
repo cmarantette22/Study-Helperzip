@@ -16,7 +16,12 @@ import { z } from "zod";
 type DbProject = InferSelectModel<typeof projectsTable>;
 type DbListing = InferSelectModel<typeof marketplaceListingsTable>;
 type DbPurchase = InferSelectModel<typeof marketplacePurchasesTable>;
+type DbUser = InferSelectModel<typeof usersTable>;
 type SellerInfo = { handle: string | null; name: string | null };
+
+interface AuthedRequest extends Request {
+  currentUser: DbUser;
+}
 
 const router: IRouter = Router();
 
@@ -41,7 +46,7 @@ const UpdateListingBody = z.object({
 });
 
 async function requireAdmin(req: Request, res: Response, next: NextFunction) {
-  const user = (req as Request & { currentUser?: { role: string } }).currentUser;
+  const user = (req as unknown as AuthedRequest).currentUser;
   if (!user || user.role !== "admin") {
     res.status(403).json({ error: "Admin access required" });
     return;
@@ -81,7 +86,7 @@ function buildListingResponse(
 }
 
 router.get("/marketplace", async (req, res) => {
-  const user = (req as any).currentUser;
+  const user = (req as unknown as AuthedRequest).currentUser;
 
   const listings = await db
     .select()
@@ -134,7 +139,7 @@ router.get("/marketplace", async (req, res) => {
 });
 
 router.get("/marketplace/my-listings", async (req, res) => {
-  const user = (req as any).currentUser;
+  const user = (req as unknown as AuthedRequest).currentUser;
 
   const listings = await db
     .select()
@@ -169,7 +174,7 @@ router.get("/marketplace/my-listings", async (req, res) => {
 });
 
 router.get("/marketplace/my-purchases", async (req, res) => {
-  const user = (req as any).currentUser;
+  const user = (req as unknown as AuthedRequest).currentUser;
 
   const purchases = await db
     .select()
@@ -202,7 +207,7 @@ router.get("/marketplace/my-purchases", async (req, res) => {
 });
 
 router.get("/marketplace/:id", async (req, res) => {
-  const user = (req as any).currentUser;
+  const user = (req as unknown as AuthedRequest).currentUser;
   const id = parseInt(req.params.id, 10);
 
   const [listing] = await db
@@ -267,7 +272,7 @@ router.get("/marketplace/:id", async (req, res) => {
 });
 
 router.post("/marketplace/listings", async (req, res) => {
-  const user = (req as any).currentUser;
+  const user = (req as unknown as AuthedRequest).currentUser;
 
   if (user.role !== "admin" && user.subscriptionStatus !== "active") {
     res.status(403).json({ error: "An active paid subscription is required to list projects on the Marketplace." });
@@ -345,7 +350,7 @@ router.post("/marketplace/listings", async (req, res) => {
 });
 
 router.put("/marketplace/listings/:id", async (req, res) => {
-  const user = (req as any).currentUser;
+  const user = (req as unknown as AuthedRequest).currentUser;
   const id = parseInt(req.params.id, 10);
 
   const [listing] = await db
@@ -392,7 +397,7 @@ router.put("/marketplace/listings/:id", async (req, res) => {
 });
 
 router.post("/marketplace/listings/:id/acquire", async (req, res) => {
-  const user = (req as any).currentUser;
+  const user = (req as unknown as AuthedRequest).currentUser;
   const id = parseInt(req.params.id, 10);
 
   const [listing] = await db
@@ -538,7 +543,7 @@ router.post("/marketplace/listings/:id/acquire", async (req, res) => {
 });
 
 router.post("/marketplace/listings/:id/push-update", async (req, res) => {
-  const user = (req as any).currentUser;
+  const user = (req as unknown as AuthedRequest).currentUser;
   const id = parseInt(req.params.id, 10);
 
   const [listing] = await db
@@ -570,7 +575,7 @@ router.post("/marketplace/listings/:id/push-update", async (req, res) => {
 });
 
 router.post("/marketplace/purchases/:id/accept-update", async (req, res) => {
-  const user = (req as any).currentUser;
+  const user = (req as unknown as AuthedRequest).currentUser;
   const id = parseInt(req.params.id, 10);
 
   const [purchase] = await db
@@ -644,7 +649,7 @@ router.post("/marketplace/purchases/:id/accept-update", async (req, res) => {
 });
 
 router.post("/marketplace/purchases/:id/dismiss-update", async (req, res) => {
-  const user = (req as any).currentUser;
+  const user = (req as unknown as AuthedRequest).currentUser;
   const id = parseInt(req.params.id, 10);
 
   const [purchase] = await db
