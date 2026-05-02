@@ -1,14 +1,20 @@
 import { Link } from "wouter";
 import { useAdminListMarketplace, type AdminMarketplaceListing } from "@workspace/api-client-react";
 import { useAuth } from "@/lib/auth-context";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Loader2, Store, ArrowLeft, Shield } from "lucide-react";
+import { Loader2, Store, ArrowLeft, Shield, DollarSign, BarChart2, Users } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+
+const COMMISSION_RATE = 0.15;
 
 function formatPrice(cents: number) {
   if (cents === 0) return "Free";
+  return `$${(cents / 100).toFixed(2)}`;
+}
+
+function formatCents(cents: number) {
   return `$${(cents / 100).toFixed(2)}`;
 }
 
@@ -54,6 +60,56 @@ export default function AdminMarketplace() {
       </div>
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6">
+        {/* Platform summary stats */}
+        {!isLoading && listings && listings.length > 0 && (() => {
+          const totalCommission = listings.reduce(
+            (sum, l) => sum + Math.round(l.priceCents * l.holderCount * COMMISSION_RATE),
+            0
+          );
+          const totalRevenue = listings.reduce(
+            (sum, l) => sum + l.priceCents * l.holderCount,
+            0
+          );
+          const totalHolders = listings.reduce((sum, l) => sum + l.holderCount, 0);
+          return (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+              <Card className="shadow-sm border rounded-xl">
+                <CardHeader className="pb-2">
+                  <CardDescription className="font-medium text-muted-foreground flex items-center text-xs uppercase tracking-wider">
+                    <DollarSign className="w-4 h-4 mr-1.5 text-green-600" /> Platform Commission
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-2xl font-bold text-green-700">{formatCents(totalCommission)}</p>
+                  <p className="text-xs text-muted-foreground mt-1">15% of gross revenue</p>
+                </CardContent>
+              </Card>
+              <Card className="shadow-sm border rounded-xl">
+                <CardHeader className="pb-2">
+                  <CardDescription className="font-medium text-muted-foreground flex items-center text-xs uppercase tracking-wider">
+                    <BarChart2 className="w-4 h-4 mr-1.5 text-primary" /> Gross Revenue
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-2xl font-bold text-foreground">{formatCents(totalRevenue)}</p>
+                  <p className="text-xs text-muted-foreground mt-1">across all paid listings</p>
+                </CardContent>
+              </Card>
+              <Card className="shadow-sm border rounded-xl">
+                <CardHeader className="pb-2">
+                  <CardDescription className="font-medium text-muted-foreground flex items-center text-xs uppercase tracking-wider">
+                    <Users className="w-4 h-4 mr-1.5 text-indigo-600" /> Total Holders
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-2xl font-bold text-foreground">{totalHolders}</p>
+                  <p className="text-xs text-muted-foreground mt-1">copies acquired</p>
+                </CardContent>
+              </Card>
+            </div>
+          );
+        })()}
+
         {isLoading ? (
           <div className="flex justify-center py-20">
             <Loader2 className="w-10 h-10 animate-spin text-primary/40" />

@@ -5,6 +5,7 @@ import {
   useCreateProject,
   useDeleteProject,
   useGetQuestionStats,
+  useGetMyListings,
   getListProjectsQueryKey,
   getGetQuestionStatsQueryKey,
 } from "@workspace/api-client-react";
@@ -12,7 +13,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { BookOpen, BrainCircuit, Loader2, ArrowRight, Target, ListChecks, Sparkles, Plus, FolderOpen, Trash2, LogOut, Shield, CreditCard, User, Store, Tag } from "lucide-react";
+import { BookOpen, BrainCircuit, Loader2, ArrowRight, Target, ListChecks, Sparkles, Plus, FolderOpen, Trash2, LogOut, Shield, CreditCard, User, Store, Tag, TrendingUp, Users, DollarSign } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
@@ -21,6 +22,12 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/lib/auth-context";
 
+const SELLER_RATE = 0.85;
+
+function formatCents(cents: number) {
+  return `$${(cents / 100).toFixed(2)}`;
+}
+
 export default function Home() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -28,6 +35,7 @@ export default function Home() {
 
   const { data: stats, isLoading: isLoadingStats } = useGetQuestionStats();
   const { data: projects, isLoading: isLoadingProjects } = useListProjects();
+  const { data: myListings, isLoading: isLoadingMyListings } = useGetMyListings();
 
   const [isNewProjectOpen, setIsNewProjectOpen] = useState(false);
   const [newProjectName, setNewProjectName] = useState("");
@@ -268,6 +276,70 @@ export default function Home() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Seller Dashboard */}
+        {(isLoadingMyListings || (myListings && myListings.length > 0)) && (
+          <div className="mb-14">
+            <h2 className="text-xl font-serif font-bold text-foreground mb-5 flex items-center">
+              <TrendingUp className="w-5 h-5 mr-2 text-primary" />
+              My Listings
+            </h2>
+            {isLoadingMyListings ? (
+              <div className="flex justify-center py-10">
+                <Loader2 className="w-8 h-8 animate-spin text-primary/40" />
+              </div>
+            ) : (
+              <div className="grid gap-4">
+                {myListings?.map((listing) => {
+                  const revenue = listing.priceCents * listing.holderCount * SELLER_RATE;
+                  return (
+                    <Link key={listing.id} href={`/marketplace/${listing.id}`}>
+                      <Card className="hover:border-primary/40 transition-all hover:shadow-md cursor-pointer shadow-sm border-border bg-card rounded-xl">
+                        <CardContent className="p-5 flex flex-col sm:flex-row sm:items-center gap-4">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex flex-wrap items-center gap-2 mb-1">
+                              <span className="font-semibold text-foreground text-base truncate">
+                                {listing.project.name}
+                              </span>
+                              <Badge
+                                variant={listing.isActive ? "default" : "secondary"}
+                                className={`text-xs ${listing.isActive ? "bg-green-100 text-green-800 border-0" : "bg-muted text-muted-foreground"}`}
+                              >
+                                {listing.isActive ? "Active" : "Inactive"}
+                              </Badge>
+                              <Badge variant="outline" className="text-xs font-semibold">
+                                {listing.priceCents === 0 ? "Free" : formatCents(listing.priceCents)}
+                              </Badge>
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              Listed {formatDistanceToNow(new Date(listing.createdAt), { addSuffix: true })}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-6 flex-shrink-0">
+                            <div className="flex items-center gap-1.5 text-muted-foreground">
+                              <Users className="w-4 h-4" />
+                              <div>
+                                <p className="text-sm font-semibold text-foreground leading-none">{listing.holderCount}</p>
+                                <p className="text-xs mt-0.5">holder{listing.holderCount !== 1 ? "s" : ""}</p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1.5 text-muted-foreground">
+                              <DollarSign className="w-4 h-4" />
+                              <div>
+                                <p className="text-sm font-semibold text-foreground leading-none">{formatCents(revenue)}</p>
+                                <p className="text-xs mt-0.5">earned (85%)</p>
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Projects List */}
         <div>
