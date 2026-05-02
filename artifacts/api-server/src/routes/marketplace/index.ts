@@ -1,4 +1,4 @@
-import { Router, type IRouter } from "express";
+import { Router, type IRouter, type Request, type Response, type NextFunction } from "express";
 import { db } from "@workspace/db";
 import {
   projectsTable,
@@ -8,9 +8,15 @@ import {
   marketplacePurchasesTable,
   usersTable,
 } from "@workspace/db/schema";
-import { eq, and, sql, count, ne, desc } from "drizzle-orm";
+import { eq, and, count, desc } from "drizzle-orm";
+import type { InferSelectModel } from "drizzle-orm";
 import { requireAuth } from "../../middlewares/requireAuth";
 import { z } from "zod";
+
+type DbProject = InferSelectModel<typeof projectsTable>;
+type DbListing = InferSelectModel<typeof marketplaceListingsTable>;
+type DbPurchase = InferSelectModel<typeof marketplacePurchasesTable>;
+type SellerInfo = { handle: string | null; name: string | null };
 
 const router: IRouter = Router();
 
@@ -34,8 +40,8 @@ const UpdateListingBody = z.object({
   isActive: z.boolean().optional(),
 });
 
-async function requireAdmin(req: any, res: any, next: any) {
-  const user = req.currentUser;
+async function requireAdmin(req: Request, res: Response, next: NextFunction) {
+  const user = (req as Request & { currentUser?: { role: string } }).currentUser;
   if (!user || user.role !== "admin") {
     res.status(403).json({ error: "Admin access required" });
     return;
@@ -44,11 +50,11 @@ async function requireAdmin(req: any, res: any, next: any) {
 }
 
 function buildListingResponse(
-  listing: any,
-  project: any,
-  seller: any,
+  listing: DbListing,
+  project: DbProject,
+  seller: SellerInfo | null,
   holderCount: number,
-  myPurchase?: any
+  myPurchase?: DbPurchase | null
 ) {
   return {
     id: listing.id,

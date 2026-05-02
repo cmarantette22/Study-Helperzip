@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { useAdminListMarketplace } from "@workspace/api-client-react";
+import { useAdminListMarketplace, type AdminMarketplaceListing } from "@workspace/api-client-react";
 import { useAuth } from "@/lib/auth-context";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -62,7 +62,7 @@ export default function AdminMarketplace() {
           <div className="text-center py-20 text-muted-foreground">No marketplace listings yet.</div>
         ) : (
           <div className="space-y-3">
-            {listings?.map((listing: any) => (
+            {listings?.map((listing: AdminMarketplaceListing) => (
               <Card key={listing.id} className="shadow-sm border rounded-xl">
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between gap-4">

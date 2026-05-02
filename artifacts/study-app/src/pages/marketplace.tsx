@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { useListMarketplaceListings } from "@workspace/api-client-react";
+import { useListMarketplaceListings, type MarketplaceListing } from "@workspace/api-client-react";
 import { useAuth } from "@/lib/auth-context";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -59,7 +59,7 @@ export default function Marketplace() {
           </div>
         ) : (
           <div className="grid gap-4 mt-6">
-            {listings.map((listing: any) => (
+            {listings.map((listing: MarketplaceListing) => (
               <Link key={listing.id} href={`/marketplace/${listing.id}`}>
                 <Card className="hover:border-primary/40 transition-all hover:shadow-md cursor-pointer group shadow-sm border-border bg-card rounded-xl">
                   <CardContent className="p-6">

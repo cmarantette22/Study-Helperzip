@@ -26,6 +26,9 @@ import {
   getGetMyListingsQueryKey,
   getGetMyPurchasesQueryKey,
   getListMarketplaceListingsQueryKey,
+  type MarketplaceListing,
+  type MarketplacePurchaseRecord,
+  type CreateListingBody,
 } from "@workspace/api-client-react";
 import { useAuth } from "@/lib/auth-context";
 import { useQueryClient } from "@tanstack/react-query";
@@ -98,8 +101,8 @@ export default function ProjectDetail() {
   const { data: myListings } = useGetMyListings();
   const { data: myPurchases } = useGetMyPurchases();
 
-  const myListing = myListings?.find((l: any) => l.projectId === projectId) ?? null;
-  const myPurchase = myPurchases?.find((p: any) => p.copiedProjectId === projectId) ?? null;
+  const myListing = (myListings as MarketplaceListing[] | undefined)?.find((l) => l.projectId === projectId) ?? null;
+  const myPurchase = (myPurchases as MarketplacePurchaseRecord[] | undefined)?.find((p) => p.copiedProjectId === projectId) ?? null;
 
   const isPaidSubscriber = user?.role === "admin" || user?.subscriptionStatus === "active";
   const showUpdateBanner = !!myPurchase && myPurchase.updateAvailable && !myPurchase.updateDismissed;
@@ -280,7 +283,7 @@ export default function ProjectDetail() {
 
   const handleCreateListing = () => {
     const priceCents = Math.round(parseFloat(marketplacePriceDollars || "0") * 100);
-    const data: any = {
+    const data: CreateListingBody = {
       projectId,
       priceCents,
       isActive: marketplaceActive,

@@ -37,6 +37,16 @@ export default function Home() {
   const [newProjectDescription, setNewProjectDescription] = useState("");
   const [showProjectMetadata, setShowProjectMetadata] = useState(false);
 
+  const resetNewProjectForm = () => {
+    setNewProjectName("");
+    setNewProjectCourse("");
+    setNewProjectSchool("");
+    setNewProjectTerm("");
+    setNewProjectYear("");
+    setNewProjectDescription("");
+    setShowProjectMetadata(false);
+  };
+
   const createProjectMutation = useCreateProject({
     mutation: {
       onSuccess: () => {
@@ -64,23 +74,20 @@ export default function Home() {
       toast({ title: "Please enter a project name", variant: "destructive" });
       return;
     }
-    const data: any = { name: newProjectName.trim() };
+    const data: {
+      name: string;
+      course?: string;
+      school?: string;
+      term?: string;
+      year?: number;
+      description?: string;
+    } = { name: newProjectName.trim() };
     if (newProjectCourse.trim()) data.course = newProjectCourse.trim();
     if (newProjectSchool.trim()) data.school = newProjectSchool.trim();
     if (newProjectTerm.trim()) data.term = newProjectTerm.trim();
     if (newProjectYear.trim()) data.year = parseInt(newProjectYear.trim(), 10);
     if (newProjectDescription.trim()) data.description = newProjectDescription.trim();
     createProjectMutation.mutate({ data });
-  };
-
-  const resetNewProjectForm = () => {
-    setNewProjectName("");
-    setNewProjectCourse("");
-    setNewProjectSchool("");
-    setNewProjectTerm("");
-    setNewProjectYear("");
-    setNewProjectDescription("");
-    setShowProjectMetadata(false);
   };
 
   const handleDeleteProject = (e: React.MouseEvent, id: number) => {
@@ -97,6 +104,11 @@ export default function Home() {
         <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top_right,var(--tw-gradient-stops))] from-white via-transparent to-transparent pointer-events-none" />
         <div className="max-w-4xl mx-auto relative z-10">
           <div className="flex items-center justify-end gap-2 mb-4">
+            <Link href="/marketplace">
+              <Button variant="ghost" size="sm" className="text-primary-foreground/80 hover:text-primary-foreground hover:bg-white/10">
+                <Store className="w-4 h-4 mr-1" /> Marketplace
+              </Button>
+            </Link>
             {user?.role === "admin" && (
               <>
                 <Link href="/admin/users">
@@ -106,16 +118,11 @@ export default function Home() {
                 </Link>
                 <Link href="/admin/marketplace">
                   <Button variant="ghost" size="sm" className="text-primary-foreground/80 hover:text-primary-foreground hover:bg-white/10">
-                    <Store className="w-4 h-4 mr-1" /> Marketplace
+                    <Shield className="w-4 h-4 mr-1" /> Mkt Admin
                   </Button>
                 </Link>
               </>
             )}
-            <Link href="/marketplace">
-              <Button variant="ghost" size="sm" className="text-primary-foreground/80 hover:text-primary-foreground hover:bg-white/10">
-                <Store className="w-4 h-4 mr-1" /> Marketplace
-              </Button>
-            </Link>
             <Link href="/subscription">
               <Button variant="ghost" size="sm" className="text-primary-foreground/80 hover:text-primary-foreground hover:bg-white/10">
                 <CreditCard className="w-4 h-4 mr-1" /> Subscription
