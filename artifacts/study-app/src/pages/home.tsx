@@ -11,7 +11,8 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { BookOpen, BrainCircuit, Loader2, ArrowRight, Target, ListChecks, Sparkles, Plus, FolderOpen, Trash2, LogOut, Shield, CreditCard, User, Store } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { BookOpen, BrainCircuit, Loader2, ArrowRight, Target, ListChecks, Sparkles, Plus, FolderOpen, Trash2, LogOut, Shield, CreditCard, User, Store, Tag } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
@@ -304,9 +305,23 @@ export default function Home() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-foreground text-base truncate">{p.name}</p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Created {formatDistanceToNow(new Date(p.createdAt), { addSuffix: true })}
-                        </p>
+                        <div className="flex flex-wrap items-center gap-2 mt-1">
+                          <p className="text-xs text-muted-foreground">
+                            Created {formatDistanceToNow(new Date(p.createdAt), { addSuffix: true })}
+                          </p>
+                          {p.isMarketplaceCopy && p.sourceOwnerHandle && (
+                            <Badge variant="outline" className="text-xs px-1.5 py-0 h-4 font-normal border-primary/30 text-primary/70 flex items-center gap-0.5">
+                              <Tag className="w-2.5 h-2.5" />
+                              {p.sourceListingId ? (
+                                <Link href={`/marketplace/${p.sourceListingId}`} onClick={(e) => e.stopPropagation()}>
+                                  @{p.sourceOwnerHandle}
+                                </Link>
+                              ) : (
+                                <span>@{p.sourceOwnerHandle}</span>
+                              )}
+                            </Badge>
+                          )}
+                        </div>
                       </div>
                       <Button
                         variant="ghost"
