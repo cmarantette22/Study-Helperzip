@@ -1,15 +1,17 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { usersTable, projectsTable } from "@workspace/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, count } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { requireAuth } from "../../middlewares/requireAuth";
 
 const router: IRouter = Router();
 
+const FREE_TIER_PROJECT_LIMIT = 12;
+
 router.post("/auth/signup", async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, plan, school, handle } = req.body;
 
     if (!name || !email || !password) {
       res.status(400).json({ error: "name, email, and password are required" });
@@ -27,6 +29,22 @@ router.post("/auth/signup", async (req, res) => {
       return;
     }
 
+    if (handle) {
+      const handleRegex = /^[a-zA-Z0-9_]{3,30}$/;
+      if (!handleRegex.test(handle)) {
+        res.status(400).json({ error: "Username can only contain letters, numbers, and underscores (3–30 characters)" });
+        return;
+      }
+      const existingHandle = await db
+        .select()
+        .from(usersTable)
+        .where(eq(usersTable.handle, handle.toLowerCase()));
+      if (existingHandle.length > 0) {
+        res.status(409).json({ error: "That username is already taken" });
+        return;
+      }
+    }
+
     const existing = await db
       .select()
       .from(usersTable)
@@ -39,6 +57,10 @@ router.post("/auth/signup", async (req, res) => {
 
     const passwordHash = await bcrypt.hash(password, 10);
 
+    const selectedPlan = plan === "monthly" || plan === "annual" ? plan : "free";
+    const subscriptionStatus = selectedPlan === "free" ? "free" : "none";
+    const planType = selectedPlan === "free" ? "free" : null;
+
     const [user] = await db
       .insert(usersTable)
       .values({
@@ -47,7 +69,10 @@ router.post("/auth/signup", async (req, res) => {
         passwordHash,
         role: "user",
         mustChangePassword: false,
-        subscriptionStatus: "none",
+        subscriptionStatus,
+        planType,
+        school: school?.trim() || null,
+        handle: handle ? handle.toLowerCase() : null,
       })
       .returning();
 
@@ -61,6 +86,9 @@ router.post("/auth/signup", async (req, res) => {
       mustChangePassword: user.mustChangePassword,
       subscriptionStatus: user.subscriptionStatus,
       planType: user.planType,
+      school: user.school,
+      handle: user.handle,
+      selectedPlan,
     });
   } catch (err) {
     console.error("Signup error:", err);
@@ -155,4 +183,5 @@ router.delete("/account", requireAuth, async (req, res) => {
   }
 });
 
+export { FREE_TIER_PROJECT_LIMIT };
 export default router;

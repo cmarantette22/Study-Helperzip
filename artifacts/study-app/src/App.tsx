@@ -108,6 +108,10 @@ function SubscriptionGate({ children }: { children: React.ReactNode }) {
     );
   }
 
+  if (status === "free") {
+    return <>{children}</>;
+  }
+
   if (!status || status === "none" || status === "canceled") {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">

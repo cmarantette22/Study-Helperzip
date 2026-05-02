@@ -297,7 +297,34 @@ export function LandingPage() {
             <p className="text-lg text-slate-400">Invest in your education. Cancel anytime.</p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto items-center">
+          <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto items-center">
+            {/* Free */}
+            <Card className="bg-slate-900 border-slate-800 text-white">
+              <CardHeader>
+                <CardTitle className="text-xl font-medium text-slate-300">Free Tier</CardTitle>
+                <div className="mt-4 flex items-baseline text-5xl font-extrabold text-emerald-400">
+                  $0
+                  <span className="ml-1 text-xl font-medium text-slate-500">forever</span>
+                </div>
+                <CardDescription className="text-slate-400 mt-2">No credit card required.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-4 text-slate-300 mt-4">
+                  {['Up to 12 Projects', 'AI Question Extraction', 'Smart Quiz Mode', 'Progress Tracking'].map((feature, i) => (
+                    <li key={i} className="flex items-center gap-3">
+                      <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" />
+                      <span>{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+              <CardFooter>
+                <a href="/signup" className="w-full">
+                  <Button className="w-full h-12 bg-emerald-600 hover:bg-emerald-700 text-white font-bold">Start Free</Button>
+                </a>
+              </CardFooter>
+            </Card>
+
             {/* Monthly */}
             <Card className="bg-slate-900 border-slate-800 text-white">
               <CardHeader>
@@ -310,7 +337,7 @@ export function LandingPage() {
               </CardHeader>
               <CardContent>
                 <ul className="space-y-4 text-slate-300 mt-4">
-                  {['Unlimited PDF & Image Uploads', 'AI Question Extraction', 'Detailed Answer Explanations', 'Progress Analytics'].map((feature, i) => (
+                  {['Unlimited Projects', 'AI Question Extraction', 'Detailed Answer Explanations', 'Progress Analytics'].map((feature, i) => (
                     <li key={i} className="flex items-center gap-3">
                       <CheckCircle2 className="w-5 h-5 text-indigo-400 flex-shrink-0" />
                       <span>{feature}</span>
@@ -340,7 +367,7 @@ export function LandingPage() {
               </CardHeader>
               <CardContent>
                 <ul className="space-y-4 text-indigo-50 mt-4">
-                  {['Unlimited PDF & Image Uploads', 'AI Question Extraction', 'Detailed Answer Explanations', 'Progress Analytics', 'Priority Support'].map((feature, i) => (
+                  {['Unlimited Projects', 'AI Question Extraction', 'Detailed Answer Explanations', 'Progress Analytics', 'Priority Support'].map((feature, i) => (
                     <li key={i} className="flex items-center gap-3">
                       <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" />
                       <span>{feature}</span>

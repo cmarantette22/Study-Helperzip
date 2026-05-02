@@ -137,7 +137,6 @@ export default function Subscription() {
   const status = info?.subscriptionStatus ?? user?.subscriptionStatus;
   const planType = info?.planType ?? user?.planType;
   const pauseDate = info?.pauseDate;
-
   const renewalDate = info?.subscription?.current_period_end
     ? new Date(info.subscription.current_period_end * 1000).toLocaleDateString()
     : null;
@@ -146,6 +145,52 @@ export default function Subscription() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (status === "free") {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4">
+        <div className="max-w-2xl mx-auto py-8">
+          <Button variant="ghost" className="mb-6" onClick={() => navigate("/")}>
+            <ArrowLeft className="w-4 h-4 mr-2" /> Back to Home
+          </Button>
+          <h1 className="text-2xl font-bold text-slate-900 mb-6">Your Plan</h1>
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center justify-between">
+                Free Tier
+                <Badge className="bg-emerald-100 text-emerald-700 border-0">Active</Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center gap-2 text-slate-600 text-sm">
+                <CheckCircle className="w-4 h-4 text-emerald-500" />
+                Up to 12 projects included
+              </div>
+              <p className="text-slate-500 text-sm">Upgrade to a paid plan for unlimited projects and priority AI processing.</p>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div className="p-4 border rounded-xl">
+                  <div className="font-semibold mb-1">Monthly</div>
+                  <div className="text-xl font-bold text-blue-700 mb-2">$15/month</div>
+                  <p className="text-xs text-slate-500 mb-3">Pause or cancel anytime</p>
+                  <Button className="w-full" size="sm" onClick={() => startCheckout("monthly")} disabled={!!actionLoading}>
+                    {actionLoading === "checkout-monthly" ? <Loader2 className="w-4 h-4 animate-spin" /> : "Upgrade Monthly"}
+                  </Button>
+                </div>
+                <div className="p-4 border rounded-xl border-blue-200 bg-blue-50">
+                  <div className="font-semibold mb-1">Annual</div>
+                  <div className="text-xl font-bold text-blue-700 mb-2">$100/year</div>
+                  <p className="text-xs text-slate-500 mb-3">Save $80. No refunds.</p>
+                  <Button className="w-full" size="sm" onClick={() => startCheckout("annual")} disabled={!!actionLoading}>
+                    {actionLoading === "checkout-annual" ? <Loader2 className="w-4 h-4 animate-spin" /> : "Upgrade Annually"}
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }

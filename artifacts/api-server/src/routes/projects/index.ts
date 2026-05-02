@@ -23,9 +23,26 @@ router.get("/projects", async (req, res) => {
   res.json(projects);
 });
 
+const FREE_TIER_PROJECT_LIMIT = 12;
+
 router.post("/projects", async (req, res) => {
   const user = (req as any).currentUser;
   const body = CreateProjectBody.parse(req.body);
+
+  if (user.subscriptionStatus === "free") {
+    const [countResult] = await db
+      .select({ value: count() })
+      .from(projectsTable)
+      .where(eq(projectsTable.userId, user.id));
+    const currentCount = countResult?.value ?? 0;
+    if (currentCount >= FREE_TIER_PROJECT_LIMIT) {
+      res.status(403).json({
+        error: `Free accounts are limited to ${FREE_TIER_PROJECT_LIMIT} projects. Upgrade to a paid plan for unlimited projects.`,
+        code: "FREE_TIER_LIMIT",
+      });
+      return;
+    }
+  }
 
   const [project] = await db
     .insert(projectsTable)

@@ -4,26 +4,36 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, BookOpen, Check, Tag } from "lucide-react";
+import { Loader2, BookOpen, Check, Tag, AtSign } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth-context";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
-const PLANS = [
+type PlanId = "free" | "monthly" | "annual";
+
+const PLANS: { id: PlanId; label: string; price: string; description: string; features: string[]; badge?: string }[] = [
+  {
+    id: "free",
+    label: "Free Tier",
+    price: "Free",
+    description: "No credit card required. Get started today.",
+    features: ["Up to 12 Projects", "AI Question Parsing", "Smart Quiz Mode", "Progress Tracking"],
+  },
   {
     id: "monthly",
     label: "Monthly",
     price: "$15/month",
-    description: "Billed monthly. Pause or cancel anytime.",
-    features: ["Pause anytime", "Cancel anytime", "Full access to all features"],
+    description: "Unlimited projects. Pause or cancel anytime.",
+    features: ["Unlimited Projects", "All Free features", "Priority AI processing", "Pause anytime"],
   },
   {
     id: "annual",
     label: "Annual",
     price: "$100/year",
     description: "Best value. Save $80 vs monthly.",
-    features: ["Save $80/year", "Full access to all features", "No refunds"],
+    badge: "Best Value",
+    features: ["Unlimited Projects", "All Free features", "Priority AI processing", "Save $80/year"],
   },
 ];
 
@@ -35,7 +45,9 @@ export default function Signup() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [selectedPlan, setSelectedPlan] = useState<"monthly" | "annual">("monthly");
+  const [handle, setHandle] = useState("");
+  const [school, setSchool] = useState("");
+  const [selectedPlan, setSelectedPlan] = useState<PlanId>("free");
   const [couponCode, setCouponCode] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
@@ -49,7 +61,14 @@ export default function Signup() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({
+          name,
+          email,
+          password,
+          plan: selectedPlan,
+          handle: handle.trim() || undefined,
+          school: school.trim() || undefined,
+        }),
       });
 
       if (!res.ok) {
@@ -58,6 +77,11 @@ export default function Signup() {
       }
 
       await refetchUser();
+
+      if (selectedPlan === "free") {
+        navigate("/");
+        return;
+      }
 
       const pricesRes = await fetch(`${BASE}/api/stripe/prices`, { credentials: "include" });
       const pricesData = await pricesRes.json();
@@ -76,7 +100,11 @@ export default function Signup() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ priceId: price.price_id, planType: selectedPlan, couponCode: couponCode.trim() || undefined }),
+        body: JSON.stringify({
+          priceId: price.price_id,
+          planType: selectedPlan,
+          couponCode: couponCode.trim() || undefined,
+        }),
       });
 
       const checkoutData = await checkoutRes.json();
@@ -95,6 +123,10 @@ export default function Signup() {
     }
   };
 
+  const buttonLabel = selectedPlan === "free"
+    ? "Create Free Account"
+    : `Create Account & Continue to Payment`;
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
       <div className="w-full max-w-2xl">
@@ -107,7 +139,9 @@ export default function Signup() {
             <p className="text-blue-200 text-sm mt-1">Create your account</p>
           </div>
           <CardContent className="p-8">
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-5">
+
+              {/* Name + Email */}
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="name">Full Name</Label>
@@ -119,53 +153,98 @@ export default function Signup() {
                 </div>
               </div>
 
+              {/* Password */}
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
                 <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="At least 6 characters" className="h-11" required minLength={6} />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="coupon">Promo Code <span className="text-slate-400 font-normal">(optional)</span></Label>
-                <div className="relative">
-                  <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              {/* Handle + School */}
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="handle">
+                    Username <span className="text-slate-400 font-normal">(optional)</span>
+                  </Label>
+                  <div className="relative">
+                    <AtSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <Input
+                      id="handle"
+                      value={handle}
+                      onChange={(e) => setHandle(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""))}
+                      placeholder="yourusername"
+                      className="h-11 pl-9"
+                      maxLength={30}
+                    />
+                  </div>
+                  <p className="text-xs text-slate-400">Letters, numbers, underscores only</p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="school">
+                    School / Institution <span className="text-slate-400 font-normal">(optional)</span>
+                  </Label>
                   <Input
-                    id="coupon"
-                    value={couponCode}
-                    onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                    placeholder="ENTER CODE"
-                    className="h-11 pl-9 tracking-widest uppercase font-mono placeholder:normal-case placeholder:font-sans placeholder:tracking-normal"
+                    id="school"
+                    value={school}
+                    onChange={(e) => setSchool(e.target.value)}
+                    placeholder="e.g. State University"
+                    className="h-11"
                   />
                 </div>
               </div>
 
+              {/* Promo Code — only shown for paid plans */}
+              {selectedPlan !== "free" && (
+                <div className="space-y-2">
+                  <Label htmlFor="coupon">Promo Code <span className="text-slate-400 font-normal">(optional)</span></Label>
+                  <div className="relative">
+                    <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <Input
+                      id="coupon"
+                      value={couponCode}
+                      onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                      placeholder="ENTER CODE"
+                      className="h-11 pl-9 tracking-widest uppercase font-mono placeholder:normal-case placeholder:font-sans placeholder:tracking-normal"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Plan selector */}
               <div className="space-y-3">
                 <Label>Choose your plan</Label>
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                   {PLANS.map((plan) => (
                     <button
                       key={plan.id}
                       type="button"
-                      onClick={() => setSelectedPlan(plan.id as "monthly" | "annual")}
-                      className={`text-left p-4 rounded-xl border-2 transition-all ${
+                      onClick={() => setSelectedPlan(plan.id)}
+                      className={`text-left p-4 rounded-xl border-2 transition-all relative ${
                         selectedPlan === plan.id
                           ? "border-blue-600 bg-blue-50"
                           : "border-slate-200 hover:border-slate-300"
                       }`}
                     >
+                      {plan.badge && (
+                        <span className="absolute -top-2 right-3 text-[10px] font-bold bg-emerald-500 text-white px-2 py-0.5 rounded-full">
+                          {plan.badge}
+                        </span>
+                      )}
                       <div className="flex items-center justify-between mb-1">
-                        <span className="font-semibold text-slate-900">{plan.label}</span>
+                        <span className="font-semibold text-slate-900 text-sm">{plan.label}</span>
                         {selectedPlan === plan.id && (
-                          <span className="w-5 h-5 bg-blue-600 rounded-full flex items-center justify-center">
-                            <Check className="w-3 h-3 text-white" />
+                          <span className="w-4 h-4 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
+                            <Check className="w-2.5 h-2.5 text-white" />
                           </span>
                         )}
                       </div>
-                      <div className="text-lg font-bold text-blue-700 mb-1">{plan.price}</div>
-                      <p className="text-xs text-slate-500 mb-2">{plan.description}</p>
+                      <div className={`text-base font-bold mb-1 ${plan.id === "free" ? "text-emerald-600" : "text-blue-700"}`}>
+                        {plan.price}
+                      </div>
+                      <p className="text-[11px] text-slate-500 mb-2 leading-tight">{plan.description}</p>
                       <ul className="space-y-1">
                         {plan.features.map((f) => (
-                          <li key={f} className="text-xs text-slate-600 flex items-center gap-1">
-                            <Check className="w-3 h-3 text-green-500 flex-shrink-0" />
+                          <li key={f} className="text-[11px] text-slate-600 flex items-start gap-1">
+                            <Check className="w-2.5 h-2.5 text-green-500 flex-shrink-0 mt-0.5" />
                             {f}
                           </li>
                         ))}
@@ -177,7 +256,7 @@ export default function Signup() {
 
               <Button type="submit" className="w-full h-11" disabled={isLoading}>
                 {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                Create Account & Continue to Payment
+                {buttonLabel}
               </Button>
 
               <p className="text-center text-sm text-slate-500">

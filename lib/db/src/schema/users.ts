@@ -15,6 +15,8 @@ export const usersTable = pgTable("users", {
   planType: text("plan_type"),
   subscriptionStatus: text("subscription_status"),
   pauseDate: timestamp("pause_date"),
+  school: text("school"),
+  handle: text("handle").unique(),
 });
 
 export const insertUserSchema = createInsertSchema(usersTable).omit({ id: true, createdAt: true });
