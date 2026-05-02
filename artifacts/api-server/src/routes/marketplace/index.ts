@@ -43,6 +43,11 @@ const CreateListingBody = z.object({
 const UpdateListingBody = z.object({
   priceCents: z.number().int().min(0).optional(),
   isActive: z.boolean().optional(),
+  course: z.string().optional(),
+  term: z.string().optional(),
+  year: z.number().int().optional(),
+  school: z.string().optional(),
+  description: z.string().optional(),
 });
 
 async function requireAdmin(req: Request, res: Response, next: NextFunction) {
@@ -381,6 +386,19 @@ router.put("/marketplace/listings/:id", async (req, res) => {
     .set(updates)
     .where(eq(marketplaceListingsTable.id, id))
     .returning();
+
+  // Apply any metadata updates to the underlying project
+  type ProjectUpdate = Partial<InferInsertModel<typeof projectsTable>>;
+  const metadataUpdate: ProjectUpdate = {};
+  if (body.course !== undefined) metadataUpdate.course = body.course;
+  if (body.term !== undefined) metadataUpdate.term = body.term;
+  if (body.year !== undefined) metadataUpdate.year = body.year;
+  if (body.school !== undefined) metadataUpdate.school = body.school;
+  if (body.description !== undefined) metadataUpdate.description = body.description;
+
+  if (Object.keys(metadataUpdate).length > 0) {
+    await db.update(projectsTable).set(metadataUpdate).where(eq(projectsTable.id, updated.projectId));
+  }
 
   const [project] = await db
     .select()

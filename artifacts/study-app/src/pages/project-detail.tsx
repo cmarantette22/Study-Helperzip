@@ -299,10 +299,16 @@ export default function ProjectDetail() {
   const handleUpdateListing = () => {
     if (!myListing) return;
     const priceCents = Math.round(parseFloat(marketplacePriceDollars || "0") * 100);
-    updateListingMutation.mutate({
-      id: myListing.id,
-      data: { priceCents, isActive: marketplaceActive },
-    });
+    const data: Parameters<typeof updateListingMutation.mutate>[0]["data"] = {
+      priceCents,
+      isActive: marketplaceActive,
+    };
+    if (marketplaceCourse.trim()) data.course = marketplaceCourse.trim();
+    if (marketplaceTerm.trim()) data.term = marketplaceTerm.trim();
+    if (marketplaceYear.trim()) data.year = parseInt(marketplaceYear.trim(), 10);
+    if (marketplaceSchool.trim()) data.school = marketplaceSchool.trim();
+    if (marketplaceDescription.trim()) data.description = marketplaceDescription.trim();
+    updateListingMutation.mutate({ id: myListing.id, data });
   };
 
   const [isManualDialogOpen, setIsManualDialogOpen] = useState(false);
@@ -1089,7 +1095,6 @@ export default function ProjectDetail() {
                     onChange={(e) => setMarketplaceCourse(e.target.value)}
                     placeholder="e.g. CS 101"
                     className="bg-muted/50 border-border"
-                    disabled={!!myListing}
                   />
                 </div>
                 <div className="space-y-1.5">
@@ -1100,7 +1105,6 @@ export default function ProjectDetail() {
                     onChange={(e) => setMarketplaceSchool(e.target.value)}
                     placeholder="e.g. MIT"
                     className="bg-muted/50 border-border"
-                    disabled={!!myListing}
                   />
                 </div>
               </div>
@@ -1113,7 +1117,6 @@ export default function ProjectDetail() {
                     onChange={(e) => setMarketplaceTerm(e.target.value)}
                     placeholder="e.g. Fall"
                     className="bg-muted/50 border-border"
-                    disabled={!!myListing}
                   />
                 </div>
                 <div className="space-y-1.5">
@@ -1125,7 +1128,6 @@ export default function ProjectDetail() {
                     onChange={(e) => setMarketplaceYear(e.target.value)}
                     placeholder="e.g. 2025"
                     className="bg-muted/50 border-border"
-                    disabled={!!myListing}
                   />
                 </div>
               </div>
@@ -1137,7 +1139,6 @@ export default function ProjectDetail() {
                   onChange={(e) => setMarketplaceDescription(e.target.value)}
                   placeholder="Describe what's covered in this study set…"
                   className="resize-none h-20 bg-muted/50 border-border"
-                  disabled={!!myListing}
                 />
               </div>
               <div className="space-y-1.5">

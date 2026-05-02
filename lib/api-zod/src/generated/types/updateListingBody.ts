@@ -9,4 +9,9 @@
 export interface UpdateListingBody {
   priceCents?: number;
   isActive?: boolean;
+  course?: string;
+  term?: string;
+  year?: number;
+  school?: string;
+  description?: string;
 }

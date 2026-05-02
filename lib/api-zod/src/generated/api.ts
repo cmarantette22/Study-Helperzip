@@ -978,6 +978,11 @@ export const UpdateListingParams = zod.object({
 export const UpdateListingBody = zod.object({
   priceCents: zod.number().optional(),
   isActive: zod.boolean().optional(),
+  course: zod.string().optional(),
+  term: zod.string().optional(),
+  year: zod.number().optional(),
+  school: zod.string().optional(),
+  description: zod.string().optional(),
 });
 
 export const UpdateListingResponse = zod.object({

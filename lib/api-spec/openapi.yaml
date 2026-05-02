@@ -1689,6 +1689,16 @@ components:
           type: integer
         isActive:
           type: boolean
+        course:
+          type: string
+        term:
+          type: string
+        year:
+          type: integer
+        school:
+          type: string
+        description:
+          type: string
     AcquireResult:
       type: object
       properties:
