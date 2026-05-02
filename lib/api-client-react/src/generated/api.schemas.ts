@@ -13,12 +13,28 @@ export interface Project {
   id: number;
   name: string;
   createdAt: string;
+  course?: string | null;
+  term?: string | null;
+  year?: number | null;
+  school?: string | null;
+  description?: string | null;
+  isMarketplaceCopy: boolean;
+  sourceOwnerHandle?: string | null;
+  sourceListingId?: number | null;
 }
 
 export interface ProjectWithStats {
   id: number;
   name: string;
   createdAt: string;
+  course?: string | null;
+  term?: string | null;
+  year?: number | null;
+  school?: string | null;
+  description?: string | null;
+  isMarketplaceCopy: boolean;
+  sourceOwnerHandle?: string | null;
+  sourceListingId?: number | null;
   totalQuestions: number;
   answeredQuestions: number;
   correctAnswers: number;
@@ -28,6 +44,11 @@ export interface ProjectWithStats {
 
 export interface CreateProjectBody {
   name: string;
+  course?: string;
+  term?: string;
+  year?: number;
+  school?: string;
+  description?: string;
 }
 
 export interface ResetResult {
@@ -285,6 +306,89 @@ export interface AdminUserWithPassword {
   createdAt: string;
 }
 
+export interface MarketplaceProjectSnapshot {
+  id: number;
+  name: string;
+  course?: string | null;
+  term?: string | null;
+  year?: number | null;
+  school?: string | null;
+  description?: string | null;
+}
+
+export interface MarketplacePurchaseRecord {
+  id: number;
+  listingId: number;
+  buyerUserId: number;
+  copiedProjectId?: number | null;
+  purchasePriceCents: number;
+  commissionCents: number;
+  updateAvailable: boolean;
+  updateDismissed: boolean;
+  purchasedAt: string;
+}
+
+export interface MarketplaceListing {
+  id: number;
+  projectId: number;
+  sellerUserId: number;
+  sellerHandle?: string | null;
+  sellerName?: string | null;
+  priceCents: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  holderCount: number;
+  project: MarketplaceProjectSnapshot;
+  myPurchase?: MarketplacePurchaseRecord | null;
+}
+
+export interface MarketplacePurchaseSummary {
+  id: number;
+  listingId: number;
+  buyerUserId: number;
+  copiedProjectId?: number | null;
+  purchasePriceCents: number;
+  commissionCents: number;
+  updateAvailable: boolean;
+  updateDismissed: boolean;
+  purchasedAt: string;
+  originalProjectName?: string | null;
+}
+
+export interface CreateListingBody {
+  projectId: number;
+  priceCents: number;
+  isActive?: boolean;
+}
+
+export interface UpdateListingBody {
+  priceCents?: number;
+  isActive?: boolean;
+}
+
+export interface AcquireResult {
+  paymentRequired?: boolean;
+  copiedProjectId?: number | null;
+  purchaseId?: number | null;
+  alreadyAcquired?: boolean;
+  priceCents?: number | null;
+  message?: string | null;
+}
+
+export interface AdminMarketplaceListing {
+  id: number;
+  projectId: number;
+  projectName?: string | null;
+  sellerHandle?: string | null;
+  sellerName?: string | null;
+  sellerEmail?: string | null;
+  priceCents: number;
+  isActive: boolean;
+  holderCount: number;
+  createdAt: string;
+}
+
 export type ListProjectQuestionsParams = {
   filter?: ListProjectQuestionsFilter;
 };
@@ -318,4 +422,17 @@ export type DeleteAllProjectQuestions200 = {
 
 export type GetQuestionStatsParams = {
   projectId?: number;
+};
+
+export type PushListingUpdate200 = {
+  notifiedCount: number;
+};
+
+export type AcceptListingUpdate200 = {
+  success: boolean;
+  questionsUpdated?: number;
+};
+
+export type DismissListingUpdate200 = {
+  success: boolean;
 };

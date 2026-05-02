@@ -17,6 +17,9 @@ import type {
 } from "@tanstack/react-query";
 
 import type {
+  AcceptListingUpdate200,
+  AcquireResult,
+  AdminMarketplaceListing,
   AdminUser,
   AdminUserWithPassword,
   AuthUser,
@@ -25,26 +28,32 @@ import type {
   ChatResponse,
   CheckAnswerBody,
   CheckAnswerResult,
+  CreateListingBody,
   CreateProjectBody,
   CreateQuestionBody,
   CreateUserBody,
   DeepExplainResult,
   DeleteAllProjectQuestions200,
+  DismissListingUpdate200,
   ExplainResult,
   GetQuestionStatsParams,
   HealthStatus,
   ListProjectQuestionsParams,
   LoginBody,
+  MarketplaceListing,
+  MarketplacePurchaseSummary,
   OutlineSection,
   ParseImageBody,
   ParsePdfBody,
   ParsePdfResult,
   Project,
   ProjectWithStats,
+  PushListingUpdate200,
   Question,
   QuestionStats,
   ResetProjectAnswersParams,
   ResetResult,
+  UpdateListingBody,
   UpdateOutlineSectionBody,
   UpdateQuestionBody,
   UploadOutlineBody,
@@ -3045,3 +3054,901 @@ export const useDeleteUser = <
 > => {
   return useMutation(getDeleteUserMutationOptions(options));
 };
+
+/**
+ * @summary List all active marketplace listings
+ */
+export const getListMarketplaceListingsUrl = () => {
+  return `/api/marketplace`;
+};
+
+export const listMarketplaceListings = async (
+  options?: RequestInit,
+): Promise<MarketplaceListing[]> => {
+  return customFetch<MarketplaceListing[]>(getListMarketplaceListingsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListMarketplaceListingsQueryKey = () => {
+  return [`/api/marketplace`] as const;
+};
+
+export const getListMarketplaceListingsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listMarketplaceListings>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listMarketplaceListings>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListMarketplaceListingsQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listMarketplaceListings>>
+  > = ({ signal }) => listMarketplaceListings({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listMarketplaceListings>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListMarketplaceListingsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listMarketplaceListings>>
+>;
+export type ListMarketplaceListingsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List all active marketplace listings
+ */
+
+export function useListMarketplaceListings<
+  TData = Awaited<ReturnType<typeof listMarketplaceListings>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listMarketplaceListings>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListMarketplaceListingsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get the current user's marketplace listings
+ */
+export const getGetMyListingsUrl = () => {
+  return `/api/marketplace/my-listings`;
+};
+
+export const getMyListings = async (
+  options?: RequestInit,
+): Promise<MarketplaceListing[]> => {
+  return customFetch<MarketplaceListing[]>(getGetMyListingsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetMyListingsQueryKey = () => {
+  return [`/api/marketplace/my-listings`] as const;
+};
+
+export const getGetMyListingsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getMyListings>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getMyListings>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetMyListingsQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getMyListings>>> = ({
+    signal,
+  }) => getMyListings({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getMyListings>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetMyListingsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getMyListings>>
+>;
+export type GetMyListingsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get the current user's marketplace listings
+ */
+
+export function useGetMyListings<
+  TData = Awaited<ReturnType<typeof getMyListings>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getMyListings>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetMyListingsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get the current user's marketplace purchases
+ */
+export const getGetMyPurchasesUrl = () => {
+  return `/api/marketplace/my-purchases`;
+};
+
+export const getMyPurchases = async (
+  options?: RequestInit,
+): Promise<MarketplacePurchaseSummary[]> => {
+  return customFetch<MarketplacePurchaseSummary[]>(getGetMyPurchasesUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetMyPurchasesQueryKey = () => {
+  return [`/api/marketplace/my-purchases`] as const;
+};
+
+export const getGetMyPurchasesQueryOptions = <
+  TData = Awaited<ReturnType<typeof getMyPurchases>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getMyPurchases>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetMyPurchasesQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getMyPurchases>>> = ({
+    signal,
+  }) => getMyPurchases({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getMyPurchases>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetMyPurchasesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getMyPurchases>>
+>;
+export type GetMyPurchasesQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get the current user's marketplace purchases
+ */
+
+export function useGetMyPurchases<
+  TData = Awaited<ReturnType<typeof getMyPurchases>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getMyPurchases>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetMyPurchasesQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get a single marketplace listing
+ */
+export const getGetMarketplaceListingUrl = (id: number) => {
+  return `/api/marketplace/${id}`;
+};
+
+export const getMarketplaceListing = async (
+  id: number,
+  options?: RequestInit,
+): Promise<MarketplaceListing> => {
+  return customFetch<MarketplaceListing>(getGetMarketplaceListingUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetMarketplaceListingQueryKey = (id: number) => {
+  return [`/api/marketplace/${id}`] as const;
+};
+
+export const getGetMarketplaceListingQueryOptions = <
+  TData = Awaited<ReturnType<typeof getMarketplaceListing>>,
+  TError = ErrorType<void>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getMarketplaceListing>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetMarketplaceListingQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getMarketplaceListing>>
+  > = ({ signal }) => getMarketplaceListing(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getMarketplaceListing>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetMarketplaceListingQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getMarketplaceListing>>
+>;
+export type GetMarketplaceListingQueryError = ErrorType<void>;
+
+/**
+ * @summary Get a single marketplace listing
+ */
+
+export function useGetMarketplaceListing<
+  TData = Awaited<ReturnType<typeof getMarketplaceListing>>,
+  TError = ErrorType<void>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getMarketplaceListing>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetMarketplaceListingQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create a marketplace listing for a project
+ */
+export const getCreateListingUrl = () => {
+  return `/api/marketplace/listings`;
+};
+
+export const createListing = async (
+  createListingBody: CreateListingBody,
+  options?: RequestInit,
+): Promise<MarketplaceListing> => {
+  return customFetch<MarketplaceListing>(getCreateListingUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createListingBody),
+  });
+};
+
+export const getCreateListingMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createListing>>,
+    TError,
+    { data: BodyType<CreateListingBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createListing>>,
+  TError,
+  { data: BodyType<CreateListingBody> },
+  TContext
+> => {
+  const mutationKey = ["createListing"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createListing>>,
+    { data: BodyType<CreateListingBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createListing(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateListingMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createListing>>
+>;
+export type CreateListingMutationBody = BodyType<CreateListingBody>;
+export type CreateListingMutationError = ErrorType<void>;
+
+/**
+ * @summary Create a marketplace listing for a project
+ */
+export const useCreateListing = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createListing>>,
+    TError,
+    { data: BodyType<CreateListingBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createListing>>,
+  TError,
+  { data: BodyType<CreateListingBody> },
+  TContext
+> => {
+  return useMutation(getCreateListingMutationOptions(options));
+};
+
+/**
+ * @summary Update a marketplace listing (price, active status)
+ */
+export const getUpdateListingUrl = (id: number) => {
+  return `/api/marketplace/listings/${id}`;
+};
+
+export const updateListing = async (
+  id: number,
+  updateListingBody: UpdateListingBody,
+  options?: RequestInit,
+): Promise<MarketplaceListing> => {
+  return customFetch<MarketplaceListing>(getUpdateListingUrl(id), {
+    ...options,
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateListingBody),
+  });
+};
+
+export const getUpdateListingMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateListing>>,
+    TError,
+    { id: number; data: BodyType<UpdateListingBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateListing>>,
+  TError,
+  { id: number; data: BodyType<UpdateListingBody> },
+  TContext
+> => {
+  const mutationKey = ["updateListing"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateListing>>,
+    { id: number; data: BodyType<UpdateListingBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return updateListing(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateListingMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateListing>>
+>;
+export type UpdateListingMutationBody = BodyType<UpdateListingBody>;
+export type UpdateListingMutationError = ErrorType<void>;
+
+/**
+ * @summary Update a marketplace listing (price, active status)
+ */
+export const useUpdateListing = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateListing>>,
+    TError,
+    { id: number; data: BodyType<UpdateListingBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateListing>>,
+  TError,
+  { id: number; data: BodyType<UpdateListingBody> },
+  TContext
+> => {
+  return useMutation(getUpdateListingMutationOptions(options));
+};
+
+/**
+ * @summary Acquire (purchase/copy) a marketplace listing
+ */
+export const getAcquireListingUrl = (id: number) => {
+  return `/api/marketplace/listings/${id}/acquire`;
+};
+
+export const acquireListing = async (
+  id: number,
+  options?: RequestInit,
+): Promise<AcquireResult> => {
+  return customFetch<AcquireResult>(getAcquireListingUrl(id), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getAcquireListingMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof acquireListing>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof acquireListing>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["acquireListing"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof acquireListing>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return acquireListing(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AcquireListingMutationResult = NonNullable<
+  Awaited<ReturnType<typeof acquireListing>>
+>;
+
+export type AcquireListingMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Acquire (purchase/copy) a marketplace listing
+ */
+export const useAcquireListing = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof acquireListing>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof acquireListing>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getAcquireListingMutationOptions(options));
+};
+
+/**
+ * @summary Notify all holders that an update is available
+ */
+export const getPushListingUpdateUrl = (id: number) => {
+  return `/api/marketplace/listings/${id}/push-update`;
+};
+
+export const pushListingUpdate = async (
+  id: number,
+  options?: RequestInit,
+): Promise<PushListingUpdate200> => {
+  return customFetch<PushListingUpdate200>(getPushListingUpdateUrl(id), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getPushListingUpdateMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof pushListingUpdate>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof pushListingUpdate>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["pushListingUpdate"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof pushListingUpdate>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return pushListingUpdate(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PushListingUpdateMutationResult = NonNullable<
+  Awaited<ReturnType<typeof pushListingUpdate>>
+>;
+
+export type PushListingUpdateMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Notify all holders that an update is available
+ */
+export const usePushListingUpdate = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof pushListingUpdate>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof pushListingUpdate>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getPushListingUpdateMutationOptions(options));
+};
+
+/**
+ * @summary Accept a pending update for a purchased project
+ */
+export const getAcceptListingUpdateUrl = (id: number) => {
+  return `/api/marketplace/purchases/${id}/accept-update`;
+};
+
+export const acceptListingUpdate = async (
+  id: number,
+  options?: RequestInit,
+): Promise<AcceptListingUpdate200> => {
+  return customFetch<AcceptListingUpdate200>(getAcceptListingUpdateUrl(id), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getAcceptListingUpdateMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof acceptListingUpdate>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof acceptListingUpdate>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["acceptListingUpdate"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof acceptListingUpdate>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return acceptListingUpdate(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AcceptListingUpdateMutationResult = NonNullable<
+  Awaited<ReturnType<typeof acceptListingUpdate>>
+>;
+
+export type AcceptListingUpdateMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Accept a pending update for a purchased project
+ */
+export const useAcceptListingUpdate = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof acceptListingUpdate>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof acceptListingUpdate>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getAcceptListingUpdateMutationOptions(options));
+};
+
+/**
+ * @summary Dismiss a pending update notification
+ */
+export const getDismissListingUpdateUrl = (id: number) => {
+  return `/api/marketplace/purchases/${id}/dismiss-update`;
+};
+
+export const dismissListingUpdate = async (
+  id: number,
+  options?: RequestInit,
+): Promise<DismissListingUpdate200> => {
+  return customFetch<DismissListingUpdate200>(getDismissListingUpdateUrl(id), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getDismissListingUpdateMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof dismissListingUpdate>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof dismissListingUpdate>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["dismissListingUpdate"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof dismissListingUpdate>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return dismissListingUpdate(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DismissListingUpdateMutationResult = NonNullable<
+  Awaited<ReturnType<typeof dismissListingUpdate>>
+>;
+
+export type DismissListingUpdateMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Dismiss a pending update notification
+ */
+export const useDismissListingUpdate = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof dismissListingUpdate>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof dismissListingUpdate>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getDismissListingUpdateMutationOptions(options));
+};
+
+/**
+ * @summary Admin view of all marketplace listings
+ */
+export const getAdminListMarketplaceUrl = () => {
+  return `/api/admin/marketplace`;
+};
+
+export const adminListMarketplace = async (
+  options?: RequestInit,
+): Promise<AdminMarketplaceListing[]> => {
+  return customFetch<AdminMarketplaceListing[]>(getAdminListMarketplaceUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getAdminListMarketplaceQueryKey = () => {
+  return [`/api/admin/marketplace`] as const;
+};
+
+export const getAdminListMarketplaceQueryOptions = <
+  TData = Awaited<ReturnType<typeof adminListMarketplace>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof adminListMarketplace>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getAdminListMarketplaceQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof adminListMarketplace>>
+  > = ({ signal }) => adminListMarketplace({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof adminListMarketplace>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type AdminListMarketplaceQueryResult = NonNullable<
+  Awaited<ReturnType<typeof adminListMarketplace>>
+>;
+export type AdminListMarketplaceQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Admin view of all marketplace listings
+ */
+
+export function useAdminListMarketplace<
+  TData = Awaited<ReturnType<typeof adminListMarketplace>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof adminListMarketplace>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getAdminListMarketplaceQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}

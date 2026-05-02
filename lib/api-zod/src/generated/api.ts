@@ -22,6 +22,14 @@ export const ListProjectsResponseItem = zod.object({
   id: zod.number(),
   name: zod.string(),
   createdAt: zod.coerce.date(),
+  course: zod.string().nullish(),
+  term: zod.string().nullish(),
+  year: zod.number().nullish(),
+  school: zod.string().nullish(),
+  description: zod.string().nullish(),
+  isMarketplaceCopy: zod.boolean(),
+  sourceOwnerHandle: zod.string().nullish(),
+  sourceListingId: zod.number().nullish(),
 });
 export const ListProjectsResponse = zod.array(ListProjectsResponseItem);
 
@@ -30,6 +38,11 @@ export const ListProjectsResponse = zod.array(ListProjectsResponseItem);
  */
 export const CreateProjectBody = zod.object({
   name: zod.string(),
+  course: zod.string().optional(),
+  term: zod.string().optional(),
+  year: zod.number().optional(),
+  school: zod.string().optional(),
+  description: zod.string().optional(),
 });
 
 /**
@@ -43,6 +56,14 @@ export const GetProjectResponse = zod.object({
   id: zod.number(),
   name: zod.string(),
   createdAt: zod.coerce.date(),
+  course: zod.string().nullish(),
+  term: zod.string().nullish(),
+  year: zod.number().nullish(),
+  school: zod.string().nullish(),
+  description: zod.string().nullish(),
+  isMarketplaceCopy: zod.boolean(),
+  sourceOwnerHandle: zod.string().nullish(),
+  sourceListingId: zod.number().nullish(),
   totalQuestions: zod.number(),
   answeredQuestions: zod.number(),
   correctAnswers: zod.number(),
@@ -59,12 +80,25 @@ export const UpdateProjectParams = zod.object({
 
 export const UpdateProjectBody = zod.object({
   name: zod.string(),
+  course: zod.string().optional(),
+  term: zod.string().optional(),
+  year: zod.number().optional(),
+  school: zod.string().optional(),
+  description: zod.string().optional(),
 });
 
 export const UpdateProjectResponse = zod.object({
   id: zod.number(),
   name: zod.string(),
   createdAt: zod.coerce.date(),
+  course: zod.string().nullish(),
+  term: zod.string().nullish(),
+  year: zod.number().nullish(),
+  school: zod.string().nullish(),
+  description: zod.string().nullish(),
+  isMarketplaceCopy: zod.boolean(),
+  sourceOwnerHandle: zod.string().nullish(),
+  sourceListingId: zod.number().nullish(),
 });
 
 /**
@@ -87,6 +121,7 @@ export const ListProjectQuestionsQueryParams = zod.object({
 
 export const ListProjectQuestionsResponseItem = zod.object({
   id: zod.number(),
+  questionNumber: zod.number().nullish(),
   projectId: zod.number().nullish(),
   questionText: zod.string(),
   choices: zod.array(
@@ -294,6 +329,7 @@ export const ChatAboutSectionResponse = zod.object({
  */
 export const ListQuestionsResponseItem = zod.object({
   id: zod.number(),
+  questionNumber: zod.number().nullish(),
   projectId: zod.number().nullish(),
   questionText: zod.string(),
   choices: zod.array(
@@ -370,6 +406,7 @@ export const ParsePdfQuestionsResponse = zod.object({
   questions: zod.array(
     zod.object({
       id: zod.number(),
+      questionNumber: zod.number().nullish(),
       projectId: zod.number().nullish(),
       questionText: zod.string(),
       choices: zod.array(
@@ -430,6 +467,7 @@ export const ParseQuestionImageBody = zod.object({
 
 export const ParseQuestionImageResponse = zod.object({
   id: zod.number(),
+  questionNumber: zod.number().nullish(),
   projectId: zod.number().nullish(),
   questionText: zod.string(),
   choices: zod.array(
@@ -486,6 +524,7 @@ export const GetQuestionParams = zod.object({
 
 export const GetQuestionResponse = zod.object({
   id: zod.number(),
+  questionNumber: zod.number().nullish(),
   projectId: zod.number().nullish(),
   questionText: zod.string(),
   choices: zod.array(
@@ -555,6 +594,7 @@ export const UpdateQuestionBody = zod.object({
 
 export const UpdateQuestionResponse = zod.object({
   id: zod.number(),
+  questionNumber: zod.number().nullish(),
   projectId: zod.number().nullish(),
   questionText: zod.string(),
   choices: zod.array(
@@ -774,3 +814,267 @@ export const CreateUserBody = zod.object({
 export const DeleteUserParams = zod.object({
   id: zod.coerce.number(),
 });
+
+/**
+ * @summary List all active marketplace listings
+ */
+export const ListMarketplaceListingsResponseItem = zod.object({
+  id: zod.number(),
+  projectId: zod.number(),
+  sellerUserId: zod.number(),
+  sellerHandle: zod.string().nullish(),
+  sellerName: zod.string().nullish(),
+  priceCents: zod.number(),
+  isActive: zod.boolean(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+  holderCount: zod.number(),
+  project: zod.object({
+    id: zod.number(),
+    name: zod.string(),
+    course: zod.string().nullish(),
+    term: zod.string().nullish(),
+    year: zod.number().nullish(),
+    school: zod.string().nullish(),
+    description: zod.string().nullish(),
+  }),
+  myPurchase: zod
+    .object({
+      id: zod.number(),
+      listingId: zod.number(),
+      buyerUserId: zod.number(),
+      copiedProjectId: zod.number().nullish(),
+      purchasePriceCents: zod.number(),
+      commissionCents: zod.number(),
+      updateAvailable: zod.boolean(),
+      updateDismissed: zod.boolean(),
+      purchasedAt: zod.coerce.date(),
+    })
+    .nullish(),
+});
+export const ListMarketplaceListingsResponse = zod.array(
+  ListMarketplaceListingsResponseItem,
+);
+
+/**
+ * @summary Get the current user's marketplace listings
+ */
+export const GetMyListingsResponseItem = zod.object({
+  id: zod.number(),
+  projectId: zod.number(),
+  sellerUserId: zod.number(),
+  sellerHandle: zod.string().nullish(),
+  sellerName: zod.string().nullish(),
+  priceCents: zod.number(),
+  isActive: zod.boolean(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+  holderCount: zod.number(),
+  project: zod.object({
+    id: zod.number(),
+    name: zod.string(),
+    course: zod.string().nullish(),
+    term: zod.string().nullish(),
+    year: zod.number().nullish(),
+    school: zod.string().nullish(),
+    description: zod.string().nullish(),
+  }),
+  myPurchase: zod
+    .object({
+      id: zod.number(),
+      listingId: zod.number(),
+      buyerUserId: zod.number(),
+      copiedProjectId: zod.number().nullish(),
+      purchasePriceCents: zod.number(),
+      commissionCents: zod.number(),
+      updateAvailable: zod.boolean(),
+      updateDismissed: zod.boolean(),
+      purchasedAt: zod.coerce.date(),
+    })
+    .nullish(),
+});
+export const GetMyListingsResponse = zod.array(GetMyListingsResponseItem);
+
+/**
+ * @summary Get the current user's marketplace purchases
+ */
+export const GetMyPurchasesResponseItem = zod.object({
+  id: zod.number(),
+  listingId: zod.number(),
+  buyerUserId: zod.number(),
+  copiedProjectId: zod.number().nullish(),
+  purchasePriceCents: zod.number(),
+  commissionCents: zod.number(),
+  updateAvailable: zod.boolean(),
+  updateDismissed: zod.boolean(),
+  purchasedAt: zod.coerce.date(),
+  originalProjectName: zod.string().nullish(),
+});
+export const GetMyPurchasesResponse = zod.array(GetMyPurchasesResponseItem);
+
+/**
+ * @summary Get a single marketplace listing
+ */
+export const GetMarketplaceListingParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GetMarketplaceListingResponse = zod.object({
+  id: zod.number(),
+  projectId: zod.number(),
+  sellerUserId: zod.number(),
+  sellerHandle: zod.string().nullish(),
+  sellerName: zod.string().nullish(),
+  priceCents: zod.number(),
+  isActive: zod.boolean(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+  holderCount: zod.number(),
+  project: zod.object({
+    id: zod.number(),
+    name: zod.string(),
+    course: zod.string().nullish(),
+    term: zod.string().nullish(),
+    year: zod.number().nullish(),
+    school: zod.string().nullish(),
+    description: zod.string().nullish(),
+  }),
+  myPurchase: zod
+    .object({
+      id: zod.number(),
+      listingId: zod.number(),
+      buyerUserId: zod.number(),
+      copiedProjectId: zod.number().nullish(),
+      purchasePriceCents: zod.number(),
+      commissionCents: zod.number(),
+      updateAvailable: zod.boolean(),
+      updateDismissed: zod.boolean(),
+      purchasedAt: zod.coerce.date(),
+    })
+    .nullish(),
+});
+
+/**
+ * @summary Create a marketplace listing for a project
+ */
+export const CreateListingBody = zod.object({
+  projectId: zod.number(),
+  priceCents: zod.number(),
+  isActive: zod.boolean().optional(),
+});
+
+/**
+ * @summary Update a marketplace listing (price, active status)
+ */
+export const UpdateListingParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const UpdateListingBody = zod.object({
+  priceCents: zod.number().optional(),
+  isActive: zod.boolean().optional(),
+});
+
+export const UpdateListingResponse = zod.object({
+  id: zod.number(),
+  projectId: zod.number(),
+  sellerUserId: zod.number(),
+  sellerHandle: zod.string().nullish(),
+  sellerName: zod.string().nullish(),
+  priceCents: zod.number(),
+  isActive: zod.boolean(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+  holderCount: zod.number(),
+  project: zod.object({
+    id: zod.number(),
+    name: zod.string(),
+    course: zod.string().nullish(),
+    term: zod.string().nullish(),
+    year: zod.number().nullish(),
+    school: zod.string().nullish(),
+    description: zod.string().nullish(),
+  }),
+  myPurchase: zod
+    .object({
+      id: zod.number(),
+      listingId: zod.number(),
+      buyerUserId: zod.number(),
+      copiedProjectId: zod.number().nullish(),
+      purchasePriceCents: zod.number(),
+      commissionCents: zod.number(),
+      updateAvailable: zod.boolean(),
+      updateDismissed: zod.boolean(),
+      purchasedAt: zod.coerce.date(),
+    })
+    .nullish(),
+});
+
+/**
+ * @summary Acquire (purchase/copy) a marketplace listing
+ */
+export const AcquireListingParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AcquireListingResponse = zod.object({
+  paymentRequired: zod.boolean().optional(),
+  copiedProjectId: zod.number().nullish(),
+  purchaseId: zod.number().nullish(),
+  alreadyAcquired: zod.boolean().optional(),
+  priceCents: zod.number().nullish(),
+  message: zod.string().nullish(),
+});
+
+/**
+ * @summary Notify all holders that an update is available
+ */
+export const PushListingUpdateParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const PushListingUpdateResponse = zod.object({
+  notifiedCount: zod.number(),
+});
+
+/**
+ * @summary Accept a pending update for a purchased project
+ */
+export const AcceptListingUpdateParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AcceptListingUpdateResponse = zod.object({
+  success: zod.boolean(),
+  questionsUpdated: zod.number().optional(),
+});
+
+/**
+ * @summary Dismiss a pending update notification
+ */
+export const DismissListingUpdateParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const DismissListingUpdateResponse = zod.object({
+  success: zod.boolean(),
+});
+
+/**
+ * @summary Admin view of all marketplace listings
+ */
+export const AdminListMarketplaceResponseItem = zod.object({
+  id: zod.number(),
+  projectId: zod.number(),
+  projectName: zod.string().nullish(),
+  sellerHandle: zod.string().nullish(),
+  sellerName: zod.string().nullish(),
+  sellerEmail: zod.string().nullish(),
+  priceCents: zod.number(),
+  isActive: zod.boolean(),
+  holderCount: zod.number(),
+  createdAt: zod.coerce.date(),
+});
+export const AdminListMarketplaceResponse = zod.array(
+  AdminListMarketplaceResponseItem,
+);

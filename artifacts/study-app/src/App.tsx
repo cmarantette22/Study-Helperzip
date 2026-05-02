@@ -14,8 +14,11 @@ import ForgotPassword from "@/pages/forgot-password";
 import ResetPassword from "@/pages/reset-password";
 import ChangePassword from "@/pages/change-password";
 import AdminUsers from "@/pages/admin-users";
+import AdminMarketplace from "@/pages/admin-marketplace";
 import ManageAccount from "@/pages/manage-account";
 import Subscription from "@/pages/subscription";
+import Marketplace from "@/pages/marketplace";
+import MarketplaceListing from "@/pages/marketplace-listing";
 import { Loader2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
@@ -188,6 +191,9 @@ function AppRoutes() {
       <Route path="/subscription" component={Subscription} />
       <Route path="/manage-account" component={ManageAccount} />
       <Route path="/admin/users" component={AdminUsers} />
+      <Route path="/admin/marketplace" component={AdminMarketplace} />
+      <Route path="/marketplace/:id" component={MarketplaceListing} />
+      <Route path="/marketplace" component={Marketplace} />
       <Route>
         <SubscriptionGate>
           <Switch>

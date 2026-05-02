@@ -7,6 +7,7 @@ import authRouter from "./auth/index";
 import adminRouter from "./admin/index";
 import stripeRouter from "./stripe/index";
 import accountRouter from "./account/index";
+import marketplaceRouter from "./marketplace/index";
 
 const router: IRouter = Router();
 
@@ -18,5 +19,6 @@ router.use(stripeRouter);
 router.use(projectsRouter);
 router.use(questionsRouter);
 router.use(outlineRouter);
+router.use(marketplaceRouter);
 
 export default router;

@@ -20,6 +20,8 @@ tags:
     description: Authentication
   - name: admin
     description: Admin user management
+  - name: marketplace
+    description: Marketplace operations
 paths:
   /healthz:
     get:
@@ -711,6 +713,231 @@ paths:
           description: Forbidden
         "404":
           description: Not found
+  /marketplace:
+    get:
+      operationId: listMarketplaceListings
+      tags: [marketplace]
+      summary: List all active marketplace listings
+      responses:
+        "200":
+          description: List of active listings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MarketplaceListing"
+  /marketplace/my-listings:
+    get:
+      operationId: getMyListings
+      tags: [marketplace]
+      summary: Get the current user's marketplace listings
+      responses:
+        "200":
+          description: List of seller's listings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MarketplaceListing"
+  /marketplace/my-purchases:
+    get:
+      operationId: getMyPurchases
+      tags: [marketplace]
+      summary: Get the current user's marketplace purchases
+      responses:
+        "200":
+          description: List of purchases
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MarketplacePurchaseSummary"
+  /marketplace/{id}:
+    get:
+      operationId: getMarketplaceListing
+      tags: [marketplace]
+      summary: Get a single marketplace listing
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Listing detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MarketplaceListing"
+        "404":
+          description: Not found
+  /marketplace/listings:
+    post:
+      operationId: createListing
+      tags: [marketplace]
+      summary: Create a marketplace listing for a project
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateListingBody"
+      responses:
+        "201":
+          description: Listing created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MarketplaceListing"
+        "400":
+          description: Validation error
+        "403":
+          description: Subscription required
+  /marketplace/listings/{id}:
+    put:
+      operationId: updateListing
+      tags: [marketplace]
+      summary: Update a marketplace listing (price, active status)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateListingBody"
+      responses:
+        "200":
+          description: Listing updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MarketplaceListing"
+        "404":
+          description: Not found
+  /marketplace/listings/{id}/acquire:
+    post:
+      operationId: acquireListing
+      tags: [marketplace]
+      summary: Acquire (purchase/copy) a marketplace listing
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Already acquired
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AcquireResult"
+        "201":
+          description: Acquired successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AcquireResult"
+        "202":
+          description: Payment required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AcquireResult"
+  /marketplace/listings/{id}/push-update:
+    post:
+      operationId: pushListingUpdate
+      tags: [marketplace]
+      summary: Notify all holders that an update is available
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Holders notified
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  notifiedCount:
+                    type: integer
+                required:
+                  - notifiedCount
+  /marketplace/purchases/{id}/accept-update:
+    post:
+      operationId: acceptListingUpdate
+      tags: [marketplace]
+      summary: Accept a pending update for a purchased project
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Update accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  questionsUpdated:
+                    type: integer
+                required:
+                  - success
+  /marketplace/purchases/{id}/dismiss-update:
+    post:
+      operationId: dismissListingUpdate
+      tags: [marketplace]
+      summary: Dismiss a pending update notification
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Update dismissed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                required:
+                  - success
+  /admin/marketplace:
+    get:
+      operationId: adminListMarketplace
+      tags: [admin]
+      summary: Admin view of all marketplace listings
+      responses:
+        "200":
+          description: All listings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminMarketplaceListing"
 components:
   schemas:
     HealthStatus:
@@ -730,10 +957,34 @@ components:
         createdAt:
           type: string
           format: date-time
+        course:
+          type: string
+          nullable: true
+        term:
+          type: string
+          nullable: true
+        year:
+          type: integer
+          nullable: true
+        school:
+          type: string
+          nullable: true
+        description:
+          type: string
+          nullable: true
+        isMarketplaceCopy:
+          type: boolean
+        sourceOwnerHandle:
+          type: string
+          nullable: true
+        sourceListingId:
+          type: integer
+          nullable: true
       required:
         - id
         - name
         - createdAt
+        - isMarketplaceCopy
     ProjectWithStats:
       type: object
       properties:
@@ -744,6 +995,29 @@ components:
         createdAt:
           type: string
           format: date-time
+        course:
+          type: string
+          nullable: true
+        term:
+          type: string
+          nullable: true
+        year:
+          type: integer
+          nullable: true
+        school:
+          type: string
+          nullable: true
+        description:
+          type: string
+          nullable: true
+        isMarketplaceCopy:
+          type: boolean
+        sourceOwnerHandle:
+          type: string
+          nullable: true
+        sourceListingId:
+          type: integer
+          nullable: true
         totalQuestions:
           type: integer
         answeredQuestions:
@@ -758,6 +1032,7 @@ components:
         - id
         - name
         - createdAt
+        - isMarketplaceCopy
         - totalQuestions
         - answeredQuestions
         - correctAnswers
@@ -767,6 +1042,16 @@ components:
       type: object
       properties:
         name:
+          type: string
+        course:
+          type: string
+        term:
+          type: string
+        year:
+          type: integer
+        school:
+          type: string
+        description:
           type: string
       required:
         - name
@@ -1239,4 +1524,212 @@ components:
         - role
         - mustChangePassword
         - tempPassword
+        - createdAt
+    MarketplaceProjectSnapshot:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        course:
+          type: string
+          nullable: true
+        term:
+          type: string
+          nullable: true
+        year:
+          type: integer
+          nullable: true
+        school:
+          type: string
+          nullable: true
+        description:
+          type: string
+          nullable: true
+      required:
+        - id
+        - name
+    MarketplacePurchaseRecord:
+      type: object
+      properties:
+        id:
+          type: integer
+        listingId:
+          type: integer
+        buyerUserId:
+          type: integer
+        copiedProjectId:
+          type: integer
+          nullable: true
+        purchasePriceCents:
+          type: integer
+        commissionCents:
+          type: integer
+        updateAvailable:
+          type: boolean
+        updateDismissed:
+          type: boolean
+        purchasedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - listingId
+        - buyerUserId
+        - purchasePriceCents
+        - commissionCents
+        - updateAvailable
+        - updateDismissed
+        - purchasedAt
+    MarketplaceListing:
+      type: object
+      properties:
+        id:
+          type: integer
+        projectId:
+          type: integer
+        sellerUserId:
+          type: integer
+        sellerHandle:
+          type: string
+          nullable: true
+        sellerName:
+          type: string
+          nullable: true
+        priceCents:
+          type: integer
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        holderCount:
+          type: integer
+        project:
+          $ref: "#/components/schemas/MarketplaceProjectSnapshot"
+        myPurchase:
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/MarketplacePurchaseRecord"
+      required:
+        - id
+        - projectId
+        - sellerUserId
+        - priceCents
+        - isActive
+        - createdAt
+        - updatedAt
+        - holderCount
+        - project
+    MarketplacePurchaseSummary:
+      type: object
+      properties:
+        id:
+          type: integer
+        listingId:
+          type: integer
+        buyerUserId:
+          type: integer
+        copiedProjectId:
+          type: integer
+          nullable: true
+        purchasePriceCents:
+          type: integer
+        commissionCents:
+          type: integer
+        updateAvailable:
+          type: boolean
+        updateDismissed:
+          type: boolean
+        purchasedAt:
+          type: string
+          format: date-time
+        originalProjectName:
+          type: string
+          nullable: true
+      required:
+        - id
+        - listingId
+        - buyerUserId
+        - purchasePriceCents
+        - commissionCents
+        - updateAvailable
+        - updateDismissed
+        - purchasedAt
+    CreateListingBody:
+      type: object
+      properties:
+        projectId:
+          type: integer
+        priceCents:
+          type: integer
+        isActive:
+          type: boolean
+      required:
+        - projectId
+        - priceCents
+    UpdateListingBody:
+      type: object
+      properties:
+        priceCents:
+          type: integer
+        isActive:
+          type: boolean
+    AcquireResult:
+      type: object
+      properties:
+        paymentRequired:
+          type: boolean
+        copiedProjectId:
+          type: integer
+          nullable: true
+        purchaseId:
+          type: integer
+          nullable: true
+        alreadyAcquired:
+          type: boolean
+        priceCents:
+          type: integer
+          nullable: true
+        message:
+          type: string
+          nullable: true
+    AdminMarketplaceListing:
+      type: object
+      properties:
+        id:
+          type: integer
+        projectId:
+          type: integer
+        projectName:
+          type: string
+          nullable: true
+        sellerHandle:
+          type: string
+          nullable: true
+        sellerName:
+          type: string
+          nullable: true
+        sellerEmail:
+          type: string
+          nullable: true
+        priceCents:
+          type: integer
+        isActive:
+          type: boolean
+        holderCount:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - projectId
+        - priceCents
+        - isActive
+        - holderCount
         - createdAt

@@ -100,9 +100,16 @@ router.put("/projects/:id", async (req, res) => {
     return;
   }
 
+  const updateData: Record<string, any> = { name: body.name };
+  if (body.course !== undefined) updateData.course = body.course;
+  if (body.term !== undefined) updateData.term = body.term;
+  if (body.year !== undefined) updateData.year = body.year;
+  if (body.school !== undefined) updateData.school = body.school;
+  if (body.description !== undefined) updateData.description = body.description;
+
   const [updated] = await db
     .update(projectsTable)
-    .set({ name: body.name })
+    .set(updateData)
     .where(eq(projectsTable.id, id))
     .returning();
 

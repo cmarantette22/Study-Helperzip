@@ -8,4 +8,9 @@
 
 export interface CreateProjectBody {
   name: string;
+  course?: string;
+  term?: string;
+  year?: number;
+  school?: string;
+  description?: string;
 }

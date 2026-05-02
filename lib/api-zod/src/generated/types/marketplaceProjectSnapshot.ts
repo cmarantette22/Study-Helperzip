@@ -6,16 +6,12 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface Project {
+export interface MarketplaceProjectSnapshot {
   id: number;
   name: string;
-  createdAt: Date;
   course?: string | null;
   term?: string | null;
   year?: number | null;
   school?: string | null;
   description?: string | null;
-  isMarketplaceCopy: boolean;
-  sourceOwnerHandle?: string | null;
-  sourceListingId?: number | null;
 }

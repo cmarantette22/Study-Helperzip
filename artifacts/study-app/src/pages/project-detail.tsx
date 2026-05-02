@@ -11,16 +11,27 @@ import {
   useListOutlineSections,
   useUploadOutline,
   useDeleteOutlineSection,
+  useGetMyListings,
+  useGetMyPurchases,
+  useCreateListing,
+  useUpdateListing,
+  usePushListingUpdate,
+  useAcceptListingUpdate,
+  useDismissListingUpdate,
   getListProjectQuestionsQueryKey,
   getGetProjectQueryKey,
   getGetQuestionStatsQueryKey,
   getListProjectsQueryKey,
   getListOutlineSectionsQueryKey,
+  getGetMyListingsQueryKey,
+  getGetMyPurchasesQueryKey,
+  getListMarketplaceListingsQueryKey,
 } from "@workspace/api-client-react";
+import { useAuth } from "@/lib/auth-context";
 import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Upload, BookOpen, BrainCircuit, Loader2, ArrowRight, Target, ListChecks, Sparkles, Plus, X, FileText, CheckCircle2, ArrowLeft, RotateCcw, Filter, ScrollText, Trash2, AlertTriangle } from "lucide-react";
+import { Upload, BookOpen, BrainCircuit, Loader2, ArrowRight, Target, ListChecks, Sparkles, Plus, X, FileText, CheckCircle2, ArrowLeft, RotateCcw, Filter, ScrollText, Trash2, AlertTriangle, Store, RefreshCw, Bell, ExternalLink, Tag, Users } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
@@ -53,6 +64,7 @@ export default function ProjectDetail() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pdfInputRef = useRef<HTMLInputElement>(null);
   const outlinePdfInputRef = useRef<HTMLInputElement>(null);
@@ -64,6 +76,16 @@ export default function ProjectDetail() {
   const [outlineUploadProgress, setOutlineUploadProgress] = useState<"idle" | "reading" | "parsing">("idle");
   const [deleteDialogSectionId, setDeleteDialogSectionId] = useState<number | null>(null);
 
+  // Marketplace state
+  const [isMarketplaceOpen, setIsMarketplaceOpen] = useState(false);
+  const [marketplaceCourse, setMarketplaceCourse] = useState("");
+  const [marketplaceTerm, setMarketplaceTerm] = useState("");
+  const [marketplaceYear, setMarketplaceYear] = useState("");
+  const [marketplaceSchool, setMarketplaceSchool] = useState("");
+  const [marketplaceDescription, setMarketplaceDescription] = useState("");
+  const [marketplacePriceDollars, setMarketplacePriceDollars] = useState("0");
+  const [marketplaceActive, setMarketplaceActive] = useState(true);
+
   const { data: project, isLoading: isLoadingProject } = useGetProject(projectId);
   const { data: questions, isLoading: isLoadingQuestions } = useListProjectQuestions(projectId, { filter: activeFilter }, {
     query: { enabled: !!projectId }
@@ -71,6 +93,16 @@ export default function ProjectDetail() {
   const { data: outlineSections, isLoading: isLoadingOutline } = useListOutlineSections(projectId, {
     query: { enabled: !!projectId }
   });
+
+  // Marketplace queries
+  const { data: myListings } = useGetMyListings();
+  const { data: myPurchases } = useGetMyPurchases();
+
+  const myListing = myListings?.find((l: any) => l.projectId === projectId) ?? null;
+  const myPurchase = myPurchases?.find((p: any) => p.copiedProjectId === projectId) ?? null;
+
+  const isPaidSubscriber = user?.role === "admin" || user?.subscriptionStatus === "active";
+  const showUpdateBanner = !!myPurchase && myPurchase.updateAvailable && !myPurchase.updateDismissed;
 
   const [snapshotProgress, setSnapshotProgress] = useState<{ total: number; completed: number; failed: number; status: "idle" | "uploading" | "done" }>({ total: 0, completed: 0, failed: 0, status: "idle" });
 
@@ -171,6 +203,100 @@ export default function ProjectDetail() {
       },
     },
   });
+
+  const createListingMutation = useCreateListing({
+    mutation: {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: getGetMyListingsQueryKey() });
+        queryClient.invalidateQueries({ queryKey: getListMarketplaceListingsQueryKey() });
+        toast({ title: "Project listed on the Marketplace!" });
+      },
+      onError: (err: any) => {
+        const msg = err?.response?.data?.error || err?.message || "Failed to create listing";
+        toast({ title: msg, variant: "destructive" });
+      },
+    },
+  });
+
+  const updateListingMutation = useUpdateListing({
+    mutation: {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: getGetMyListingsQueryKey() });
+        queryClient.invalidateQueries({ queryKey: getListMarketplaceListingsQueryKey() });
+        toast({ title: "Listing updated" });
+      },
+      onError: (err: any) => {
+        const msg = err?.response?.data?.error || err?.message || "Failed to update listing";
+        toast({ title: msg, variant: "destructive" });
+      },
+    },
+  });
+
+  const pushUpdateMutation = usePushListingUpdate({
+    mutation: {
+      onSuccess: (data) => {
+        toast({ title: `Update sent to ${data.notifiedCount} holder${data.notifiedCount !== 1 ? "s" : ""}` });
+      },
+      onError: (err: any) => {
+        const msg = err?.response?.data?.error || err?.message || "Failed to push update";
+        toast({ title: msg, variant: "destructive" });
+      },
+    },
+  });
+
+  const acceptUpdateMutation = useAcceptListingUpdate({
+    mutation: {
+      onSuccess: (data) => {
+        queryClient.invalidateQueries({ queryKey: getGetMyPurchasesQueryKey() });
+        queryClient.invalidateQueries({ queryKey: getListProjectQuestionsQueryKey(projectId) });
+        queryClient.invalidateQueries({ queryKey: getGetProjectQueryKey(projectId) });
+        toast({ title: `${data.questionsUpdated} questions updated from the latest version!` });
+      },
+      onError: (err: any) => {
+        const msg = err?.response?.data?.error || err?.message || "Failed to accept update";
+        toast({ title: msg, variant: "destructive" });
+      },
+    },
+  });
+
+  const dismissUpdateMutation = useDismissListingUpdate({
+    mutation: {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: getGetMyPurchasesQueryKey() });
+      },
+    },
+  });
+
+  const handleOpenMarketplace = () => {
+    setMarketplaceCourse(project?.course ?? "");
+    setMarketplaceTerm(project?.term ?? "");
+    setMarketplaceYear(project?.year ? String(project.year) : "");
+    setMarketplaceSchool(project?.school ?? "");
+    setMarketplaceDescription(project?.description ?? "");
+    setMarketplacePriceDollars(myListing ? String((myListing.priceCents / 100).toFixed(2)) : "0");
+    setMarketplaceActive(myListing ? myListing.isActive : true);
+    setIsMarketplaceOpen(true);
+  };
+
+  const handleCreateListing = () => {
+    const priceCents = Math.round(parseFloat(marketplacePriceDollars || "0") * 100);
+    createListingMutation.mutate({
+      data: {
+        projectId,
+        priceCents,
+        isActive: marketplaceActive,
+      },
+    });
+  };
+
+  const handleUpdateListing = () => {
+    if (!myListing) return;
+    const priceCents = Math.round(parseFloat(marketplacePriceDollars || "0") * 100);
+    updateListingMutation.mutate({
+      id: myListing.id,
+      data: { priceCents, isActive: marketplaceActive },
+    });
+  };
 
   const [isManualDialogOpen, setIsManualDialogOpen] = useState(false);
   const [manualQuestionText, setManualQuestionText] = useState("");
@@ -293,10 +419,71 @@ export default function ProjectDetail() {
                 {project?.totalQuestions} questions · {project?.accuracyPercent}% accuracy
                 {outlineSections && outlineSections.length > 0 && ` · ${outlineSections.length} outline sections`}
               </p>
+              {project?.isMarketplaceCopy && project.sourceOwnerHandle && (
+                <div className="flex items-center gap-1.5 mt-2">
+                  <Tag className="w-3.5 h-3.5 text-primary-foreground/60" />
+                  <span className="text-primary-foreground/70 text-xs">
+                    From{" "}
+                    {project.sourceListingId ? (
+                      <Link href={`/marketplace/${project.sourceListingId}`} className="underline hover:text-primary-foreground">
+                        @{project.sourceOwnerHandle}
+                      </Link>
+                    ) : (
+                      <span>@{project.sourceOwnerHandle}</span>
+                    )}
+                  </span>
+                  <Badge className="text-xs bg-white/20 border-0 text-primary-foreground/80 ml-1">Marketplace copy</Badge>
+                </div>
+              )}
             </div>
+            {!project?.isMarketplaceCopy && isPaidSubscriber && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleOpenMarketplace}
+                className="border-white/30 bg-white/10 text-primary-foreground hover:bg-white/20 flex-shrink-0"
+              >
+                <Store className="w-4 h-4 mr-2" />
+                {myListing ? "Manage Listing" : "List on Marketplace"}
+              </Button>
+            )}
           </div>
         </div>
       </header>
+
+      {showUpdateBanner && (
+        <div className="bg-amber-50 border-b border-amber-200">
+          <div className="max-w-4xl mx-auto px-6 py-3 flex flex-col sm:flex-row items-start sm:items-center gap-3 justify-between">
+            <div className="flex items-start gap-2">
+              <Bell className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="text-sm font-medium text-amber-900">Update available from the original creator</p>
+                <p className="text-xs text-amber-700">The source project was updated. You can sync the latest questions into your copy.</p>
+              </div>
+            </div>
+            <div className="flex gap-2 flex-shrink-0">
+              <Button
+                size="sm"
+                variant="outline"
+                className="border-amber-400 text-amber-800 hover:bg-amber-100 h-8 text-xs"
+                onClick={() => dismissUpdateMutation.mutate({ id: myPurchase!.id })}
+                disabled={dismissUpdateMutation.isPending}
+              >
+                Dismiss
+              </Button>
+              <Button
+                size="sm"
+                className="bg-amber-600 hover:bg-amber-700 text-white h-8 text-xs"
+                onClick={() => acceptUpdateMutation.mutate({ id: myPurchase!.id })}
+                disabled={acceptUpdateMutation.isPending}
+              >
+                {acceptUpdateMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <RefreshCw className="w-3 h-3 mr-1" />}
+                Sync update
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <main className="max-w-4xl mx-auto px-6 -mt-6 relative z-20">
         {/* Stats Cards */}
@@ -845,6 +1032,167 @@ export default function ProjectDetail() {
               Delete All Questions
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Marketplace Listing Dialog */}
+      <Dialog open={isMarketplaceOpen} onOpenChange={setIsMarketplaceOpen}>
+        <DialogContent className="sm:max-w-lg p-0 overflow-hidden bg-card border-none shadow-2xl rounded-2xl">
+          <div className="p-6 md:p-8">
+            <DialogHeader className="mb-6">
+              <DialogTitle className="text-2xl font-serif text-foreground flex items-center gap-2">
+                <Store className="w-6 h-6 text-primary" />
+                {myListing ? "Manage Listing" : "List on Marketplace"}
+              </DialogTitle>
+              <DialogDescription className="text-muted-foreground">
+                {myListing
+                  ? "Update your listing details or push a content update to all holders."
+                  : "Share your study project with the Study Buddy community. Fill in the details below to make it discoverable."}
+              </DialogDescription>
+            </DialogHeader>
+
+            {myListing && (
+              <div className="mb-6 p-3 bg-muted/40 rounded-lg flex items-center gap-3">
+                <Users className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                <p className="text-sm text-muted-foreground">
+                  <span className="font-semibold text-foreground">{myListing.holderCount ?? 0}</span> holder{(myListing.holderCount ?? 0) !== 1 ? "s" : ""}
+                </p>
+                <div className="ml-auto">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 text-xs"
+                    disabled={pushUpdateMutation.isPending || (myListing.holderCount ?? 0) === 0}
+                    onClick={() => pushUpdateMutation.mutate({ id: myListing.id })}
+                  >
+                    {pushUpdateMutation.isPending ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <RefreshCw className="w-3 h-3 mr-1" />}
+                    Push update to holders
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="mp-course" className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Course</Label>
+                  <Input
+                    id="mp-course"
+                    value={marketplaceCourse}
+                    onChange={(e) => setMarketplaceCourse(e.target.value)}
+                    placeholder="e.g. CS 101"
+                    className="bg-muted/50 border-border"
+                    disabled={!!myListing}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="mp-school" className="text-xs text-muted-foreground uppercase tracking-wider font-medium">School</Label>
+                  <Input
+                    id="mp-school"
+                    value={marketplaceSchool}
+                    onChange={(e) => setMarketplaceSchool(e.target.value)}
+                    placeholder="e.g. MIT"
+                    className="bg-muted/50 border-border"
+                    disabled={!!myListing}
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="mp-term" className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Term</Label>
+                  <Input
+                    id="mp-term"
+                    value={marketplaceTerm}
+                    onChange={(e) => setMarketplaceTerm(e.target.value)}
+                    placeholder="e.g. Fall"
+                    className="bg-muted/50 border-border"
+                    disabled={!!myListing}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="mp-year" className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Year</Label>
+                  <Input
+                    id="mp-year"
+                    type="number"
+                    value={marketplaceYear}
+                    onChange={(e) => setMarketplaceYear(e.target.value)}
+                    placeholder="e.g. 2025"
+                    className="bg-muted/50 border-border"
+                    disabled={!!myListing}
+                  />
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="mp-description" className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Description</Label>
+                <Textarea
+                  id="mp-description"
+                  value={marketplaceDescription}
+                  onChange={(e) => setMarketplaceDescription(e.target.value)}
+                  placeholder="Describe what's covered in this study set…"
+                  className="resize-none h-20 bg-muted/50 border-border"
+                  disabled={!!myListing}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="mp-price" className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Price (USD)</Label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">$</span>
+                  <Input
+                    id="mp-price"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={marketplacePriceDollars}
+                    onChange={(e) => setMarketplacePriceDollars(e.target.value)}
+                    className="pl-7 bg-muted/50 border-border"
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">Set to 0 for a free listing. Paid listings are subject to a 15% platform fee.</p>
+              </div>
+              {myListing && (
+                <div className="flex items-center justify-between py-2 px-3 bg-muted/30 rounded-lg">
+                  <div>
+                    <p className="text-sm font-medium text-foreground">Listing active</p>
+                    <p className="text-xs text-muted-foreground">Toggle to pause or resume your listing</p>
+                  </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={marketplaceActive}
+                    onClick={() => setMarketplaceActive((v) => !v)}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${marketplaceActive ? "bg-primary" : "bg-muted-foreground/30"}`}
+                  >
+                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${marketplaceActive ? "translate-x-6" : "translate-x-1"}`} />
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="p-6 bg-muted/40 border-t border-border flex justify-end gap-3">
+            <Button variant="ghost" onClick={() => setIsMarketplaceOpen(false)} className="text-muted-foreground hover:text-foreground">
+              Cancel
+            </Button>
+            {myListing ? (
+              <Button
+                onClick={handleUpdateListing}
+                disabled={updateListingMutation.isPending}
+                className="px-6"
+              >
+                {updateListingMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                Save changes
+              </Button>
+            ) : (
+              <Button
+                onClick={handleCreateListing}
+                disabled={createListingMutation.isPending}
+                className="px-6"
+              >
+                {createListingMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                List project
+              </Button>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </div>

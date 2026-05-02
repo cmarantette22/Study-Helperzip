@@ -12,6 +12,7 @@ import type { QuestionExplanationsItem } from "./questionExplanationsItem";
 
 export interface Question {
   id: number;
+  questionNumber?: number | null;
   projectId?: number | null;
   questionText: string;
   choices: Choice[];
