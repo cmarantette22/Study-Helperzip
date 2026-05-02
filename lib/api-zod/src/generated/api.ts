@@ -961,6 +961,11 @@ export const CreateListingBody = zod.object({
   projectId: zod.number(),
   priceCents: zod.number(),
   isActive: zod.boolean().optional(),
+  course: zod.string().optional(),
+  term: zod.string().optional(),
+  year: zod.number().optional(),
+  school: zod.string().optional(),
+  description: zod.string().optional(),
 });
 
 /**

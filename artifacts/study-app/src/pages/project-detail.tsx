@@ -280,13 +280,17 @@ export default function ProjectDetail() {
 
   const handleCreateListing = () => {
     const priceCents = Math.round(parseFloat(marketplacePriceDollars || "0") * 100);
-    createListingMutation.mutate({
-      data: {
-        projectId,
-        priceCents,
-        isActive: marketplaceActive,
-      },
-    });
+    const data: any = {
+      projectId,
+      priceCents,
+      isActive: marketplaceActive,
+    };
+    if (marketplaceCourse.trim()) data.course = marketplaceCourse.trim();
+    if (marketplaceTerm.trim()) data.term = marketplaceTerm.trim();
+    if (marketplaceYear.trim()) data.year = parseInt(marketplaceYear.trim(), 10);
+    if (marketplaceSchool.trim()) data.school = marketplaceSchool.trim();
+    if (marketplaceDescription.trim()) data.description = marketplaceDescription.trim();
+    createListingMutation.mutate({ data });
   };
 
   const handleUpdateListing = () => {

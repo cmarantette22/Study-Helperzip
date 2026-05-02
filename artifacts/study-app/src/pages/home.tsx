@@ -30,6 +30,12 @@ export default function Home() {
 
   const [isNewProjectOpen, setIsNewProjectOpen] = useState(false);
   const [newProjectName, setNewProjectName] = useState("");
+  const [newProjectCourse, setNewProjectCourse] = useState("");
+  const [newProjectSchool, setNewProjectSchool] = useState("");
+  const [newProjectTerm, setNewProjectTerm] = useState("");
+  const [newProjectYear, setNewProjectYear] = useState("");
+  const [newProjectDescription, setNewProjectDescription] = useState("");
+  const [showProjectMetadata, setShowProjectMetadata] = useState(false);
 
   const createProjectMutation = useCreateProject({
     mutation: {
@@ -38,7 +44,7 @@ export default function Home() {
         queryClient.invalidateQueries({ queryKey: getListProjectsQueryKey() });
         queryClient.invalidateQueries({ queryKey: getGetQuestionStatsQueryKey() });
         setIsNewProjectOpen(false);
-        setNewProjectName("");
+        resetNewProjectForm();
       },
     },
   });
@@ -58,7 +64,23 @@ export default function Home() {
       toast({ title: "Please enter a project name", variant: "destructive" });
       return;
     }
-    createProjectMutation.mutate({ data: { name: newProjectName.trim() } });
+    const data: any = { name: newProjectName.trim() };
+    if (newProjectCourse.trim()) data.course = newProjectCourse.trim();
+    if (newProjectSchool.trim()) data.school = newProjectSchool.trim();
+    if (newProjectTerm.trim()) data.term = newProjectTerm.trim();
+    if (newProjectYear.trim()) data.year = parseInt(newProjectYear.trim(), 10);
+    if (newProjectDescription.trim()) data.description = newProjectDescription.trim();
+    createProjectMutation.mutate({ data });
+  };
+
+  const resetNewProjectForm = () => {
+    setNewProjectName("");
+    setNewProjectCourse("");
+    setNewProjectSchool("");
+    setNewProjectTerm("");
+    setNewProjectYear("");
+    setNewProjectDescription("");
+    setShowProjectMetadata(false);
   };
 
   const handleDeleteProject = (e: React.MouseEvent, id: number) => {
@@ -125,7 +147,7 @@ export default function Home() {
                 New Project
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-md p-0 overflow-hidden bg-card border-none shadow-2xl rounded-2xl">
+            <DialogContent className="sm:max-w-lg p-0 overflow-hidden bg-card border-none shadow-2xl rounded-2xl">
               <div className="p-6 md:p-8">
                 <DialogHeader className="mb-6">
                   <DialogTitle className="text-2xl font-serif text-foreground">New Study Project</DialogTitle>
@@ -141,14 +163,49 @@ export default function Home() {
                       onChange={(e) => setNewProjectName(e.target.value)}
                       placeholder="e.g. Econ 202 Midterm 2"
                       className="bg-muted/50 border-border focus-visible:ring-primary text-base h-12"
-                      onKeyDown={(e) => e.key === "Enter" && handleCreateProject()}
+                      onKeyDown={(e) => e.key === "Enter" && !showProjectMetadata && handleCreateProject()}
                       autoFocus
                     />
                   </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowProjectMetadata((v) => !v)}
+                    className="text-xs text-primary hover:underline flex items-center gap-1"
+                  >
+                    {showProjectMetadata ? "− Hide" : "+ Add"} course details (optional)
+                  </button>
+                  {showProjectMetadata && (
+                    <div className="space-y-3 pt-1">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1.5">
+                          <Label htmlFor="np-course" className="text-muted-foreground font-medium uppercase tracking-wider text-xs">Course</Label>
+                          <Input id="np-course" value={newProjectCourse} onChange={(e) => setNewProjectCourse(e.target.value)} placeholder="e.g. CS 101" className="bg-muted/50 border-border" />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label htmlFor="np-school" className="text-muted-foreground font-medium uppercase tracking-wider text-xs">School</Label>
+                          <Input id="np-school" value={newProjectSchool} onChange={(e) => setNewProjectSchool(e.target.value)} placeholder="e.g. MIT" className="bg-muted/50 border-border" />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1.5">
+                          <Label htmlFor="np-term" className="text-muted-foreground font-medium uppercase tracking-wider text-xs">Term</Label>
+                          <Input id="np-term" value={newProjectTerm} onChange={(e) => setNewProjectTerm(e.target.value)} placeholder="e.g. Fall" className="bg-muted/50 border-border" />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label htmlFor="np-year" className="text-muted-foreground font-medium uppercase tracking-wider text-xs">Year</Label>
+                          <Input id="np-year" type="number" value={newProjectYear} onChange={(e) => setNewProjectYear(e.target.value)} placeholder="e.g. 2025" className="bg-muted/50 border-border" />
+                        </div>
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="np-desc" className="text-muted-foreground font-medium uppercase tracking-wider text-xs">Description</Label>
+                        <Input id="np-desc" value={newProjectDescription} onChange={(e) => setNewProjectDescription(e.target.value)} placeholder="What topics does this cover?" className="bg-muted/50 border-border" />
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
               <div className="p-6 bg-muted/40 border-t border-border flex justify-end gap-3">
-                <Button variant="ghost" onClick={() => setIsNewProjectOpen(false)} className="text-muted-foreground hover:text-foreground">
+                <Button variant="ghost" onClick={() => { setIsNewProjectOpen(false); resetNewProjectForm(); }} className="text-muted-foreground hover:text-foreground">
                   Cancel
                 </Button>
                 <Button onClick={handleCreateProject} disabled={createProjectMutation.isPending} className="px-6">

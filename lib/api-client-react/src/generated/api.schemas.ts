@@ -360,6 +360,11 @@ export interface CreateListingBody {
   projectId: number;
   priceCents: number;
   isActive?: boolean;
+  course?: string;
+  term?: string;
+  year?: number;
+  school?: string;
+  description?: string;
 }
 
 export interface UpdateListingBody {

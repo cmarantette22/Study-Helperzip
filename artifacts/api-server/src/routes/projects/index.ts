@@ -44,9 +44,16 @@ router.post("/projects", async (req, res) => {
     }
   }
 
+  const insertValues: Record<string, any> = { name: body.name, userId: user.id };
+  if (body.course !== undefined) insertValues.course = body.course;
+  if (body.term !== undefined) insertValues.term = body.term;
+  if (body.year !== undefined) insertValues.year = body.year;
+  if (body.school !== undefined) insertValues.school = body.school;
+  if (body.description !== undefined) insertValues.description = body.description;
+
   const [project] = await db
     .insert(projectsTable)
-    .values({ name: body.name, userId: user.id })
+    .values(insertValues as any)
     .returning();
 
   res.status(201).json(project);

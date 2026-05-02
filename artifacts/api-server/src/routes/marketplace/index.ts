@@ -22,6 +22,11 @@ const CreateListingBody = z.object({
   projectId: z.number().int().positive(),
   priceCents: z.number().int().min(0),
   isActive: z.boolean().optional().default(true),
+  course: z.string().optional(),
+  term: z.string().optional(),
+  year: z.number().int().optional(),
+  school: z.string().optional(),
+  description: z.string().optional(),
 });
 
 const UpdateListingBody = z.object({
@@ -88,11 +93,11 @@ router.get("/marketplace", async (req, res) => {
       if (!project) return null;
 
       const [seller] = await db
-        .select({ handle: usersTable.handle, name: usersTable.name, subscriptionStatus: usersTable.subscriptionStatus })
+        .select({ handle: usersTable.handle, name: usersTable.name, subscriptionStatus: usersTable.subscriptionStatus, role: usersTable.role })
         .from(usersTable)
         .where(eq(usersTable.id, listing.sellerUserId));
 
-      if (!seller || (seller.subscriptionStatus !== "active" && seller.subscriptionStatus !== "free")) return null;
+      if (!seller || (seller.subscriptionStatus !== "active" && seller.role !== "admin")) return null;
 
       const [holderResult] = await db
         .select({ value: count() })
@@ -215,9 +220,19 @@ router.get("/marketplace/:id", async (req, res) => {
   }
 
   const [seller] = await db
-    .select({ handle: usersTable.handle, name: usersTable.name, subscriptionStatus: usersTable.subscriptionStatus })
+    .select({ handle: usersTable.handle, name: usersTable.name, subscriptionStatus: usersTable.subscriptionStatus, role: usersTable.role })
     .from(usersTable)
     .where(eq(usersTable.id, listing.sellerUserId));
+
+  if (!seller || (!listing.isActive && user.id !== listing.sellerUserId && user.role !== "admin")) {
+    res.status(404).json({ error: "Listing not found" });
+    return;
+  }
+
+  if (seller.subscriptionStatus !== "active" && seller.role !== "admin" && user.id !== listing.sellerUserId && user.role !== "admin") {
+    res.status(404).json({ error: "This listing is no longer available" });
+    return;
+  }
 
   const [holderResult] = await db
     .select({ value: count() })
@@ -255,7 +270,7 @@ router.post("/marketplace/listings", async (req, res) => {
 
   const body = CreateListingBody.parse(req.body);
 
-  const [project] = await db
+  let [project] = await db
     .select()
     .from(projectsTable)
     .where(and(eq(projectsTable.id, body.projectId), eq(projectsTable.userId, user.id)));
@@ -268,6 +283,19 @@ router.post("/marketplace/listings", async (req, res) => {
   if (project.isMarketplaceCopy) {
     res.status(400).json({ error: "Marketplace copies cannot be re-listed." });
     return;
+  }
+
+  // Apply any metadata provided in the listing request to the project
+  const metadataUpdate: Record<string, any> = {};
+  if (body.course !== undefined) metadataUpdate.course = body.course;
+  if (body.term !== undefined) metadataUpdate.term = body.term;
+  if (body.year !== undefined) metadataUpdate.year = body.year;
+  if (body.school !== undefined) metadataUpdate.school = body.school;
+  if (body.description !== undefined) metadataUpdate.description = body.description;
+
+  if (Object.keys(metadataUpdate).length > 0) {
+    await db.update(projectsTable).set(metadataUpdate).where(eq(projectsTable.id, body.projectId));
+    [project] = await db.select().from(projectsTable).where(eq(projectsTable.id, body.projectId));
   }
 
   const missingFields: string[] = [];
@@ -402,9 +430,14 @@ router.post("/marketplace/listings/:id/acquire", async (req, res) => {
   }
 
   const [seller] = await db
-    .select({ handle: usersTable.handle })
+    .select({ handle: usersTable.handle, subscriptionStatus: usersTable.subscriptionStatus, role: usersTable.role })
     .from(usersTable)
     .where(eq(usersTable.id, listing.sellerUserId));
+
+  if (!seller || (seller.subscriptionStatus !== "active" && seller.role !== "admin")) {
+    res.status(400).json({ error: "This listing is no longer available." });
+    return;
+  }
 
   if (listing.priceCents > 0) {
     const commissionCents = Math.round(listing.priceCents * COMMISSION_RATE);
