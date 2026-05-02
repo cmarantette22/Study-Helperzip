@@ -823,6 +823,28 @@ paths:
                 $ref: "#/components/schemas/MarketplaceListing"
         "404":
           description: Not found
+  /marketplace/listings/{id}/checkout:
+    post:
+      operationId: createMarketplaceCheckoutSession
+      tags: [marketplace]
+      summary: Create a Stripe Checkout session for a paid marketplace listing
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Checkout session URL created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MarketplaceCheckoutResult"
+        "400":
+          description: Bad request (free listing, already acquired, own listing)
+        "404":
+          description: Listing not found
   /marketplace/listings/{id}/acquire:
     post:
       operationId: acquireListing
@@ -1699,6 +1721,13 @@ components:
           type: string
         description:
           type: string
+    MarketplaceCheckoutResult:
+      type: object
+      properties:
+        url:
+          type: string
+      required:
+        - url
     AcquireResult:
       type: object
       properties:

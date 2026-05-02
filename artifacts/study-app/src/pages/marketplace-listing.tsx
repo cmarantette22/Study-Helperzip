@@ -1,7 +1,9 @@
-import { Link, useParams, useLocation } from "wouter";
+import { Link, useParams, useLocation, useSearch } from "wouter";
+import { useEffect } from "react";
 import {
   useGetMarketplaceListing,
   useAcquireListing,
+  useCreateMarketplaceCheckoutSession,
   getListMarketplaceListingsQueryKey,
   getGetMarketplaceListingQueryKey,
   getGetMyPurchasesQueryKey,
@@ -11,10 +13,9 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth-context";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
-  Loader2, Store, ArrowLeft, BookOpen, GraduationCap, Calendar, Tag, Users,
-  DollarSign, CreditCard, CheckCircle2, ExternalLink, AlertCircle,
+  Loader2, ArrowLeft, BookOpen, GraduationCap, Calendar, Tag, Users,
+  CreditCard, CheckCircle2, ExternalLink, AlertCircle, PartyPopper,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -27,6 +28,9 @@ export default function MarketplaceListing() {
   const params = useParams<{ id: string }>();
   const listingId = parseInt(params.id!, 10);
   const [, navigate] = useLocation();
+  const search = useSearch();
+  const searchParams = new URLSearchParams(search);
+  const checkoutStatus = searchParams.get("checkout");
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -41,9 +45,7 @@ export default function MarketplaceListing() {
         queryClient.invalidateQueries({ queryKey: getGetMyPurchasesQueryKey() });
         queryClient.invalidateQueries({ queryKey: getListProjectsQueryKey() });
 
-        if (data.paymentRequired) {
-          toast({ title: "Purchase intent recorded. Payment processing coming soon." });
-        } else if (data.alreadyAcquired) {
+        if (data.alreadyAcquired) {
           toast({ title: "You already have this project." });
           if (data.copiedProjectId) navigate(`/project/${data.copiedProjectId}`);
         } else {
@@ -57,6 +59,40 @@ export default function MarketplaceListing() {
       },
     },
   });
+
+  const checkoutMutation = useCreateMarketplaceCheckoutSession({
+    mutation: {
+      onSuccess: (data) => {
+        if (data.url) {
+          window.location.href = data.url;
+        }
+      },
+      onError: (err: any) => {
+        const msg = err?.response?.data?.error || err?.message || "Failed to start checkout";
+        toast({ title: msg, variant: "destructive" });
+      },
+    },
+  });
+
+  const copiedProjectIdForPolling = listing?.myPurchase?.copiedProjectId ?? null;
+
+  // After returning from Stripe checkout, poll the listing until copiedProjectId
+  // is populated by the webhook, then navigate directly to the new project.
+  useEffect(() => {
+    if (checkoutStatus !== "success") return;
+
+    if (copiedProjectIdForPolling) {
+      navigate(`/project/${copiedProjectIdForPolling}`);
+      return;
+    }
+
+    const interval = setInterval(() => {
+      queryClient.invalidateQueries({ queryKey: getGetMarketplaceListingQueryKey(listingId) });
+      queryClient.invalidateQueries({ queryKey: getListProjectsQueryKey() });
+    }, 2000);
+
+    return () => clearInterval(interval);
+  }, [checkoutStatus, copiedProjectIdForPolling, listingId, navigate, queryClient]);
 
   if (isLoading) {
     return (
@@ -82,6 +118,7 @@ export default function MarketplaceListing() {
   const isOwner = listing.sellerUserId === user?.id;
   const alreadyAcquired = !!listing.myPurchase;
   const copiedProjectId = listing.myPurchase?.copiedProjectId;
+  const paymentPending = alreadyAcquired && !copiedProjectId;
 
   return (
     <div className="min-h-screen bg-background pb-24">
@@ -124,6 +161,23 @@ export default function MarketplaceListing() {
       </header>
 
       <main className="max-w-4xl mx-auto px-6 -mt-6 relative z-20 space-y-6">
+        {/* Payment success banner */}
+        {checkoutStatus === "success" && (
+          <Card className="shadow-lg border-0 bg-green-50 border-green-200 rounded-xl overflow-hidden">
+            <CardContent className="p-5 flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                <PartyPopper className="w-5 h-5 text-green-600" />
+              </div>
+              <div>
+                <p className="font-semibold text-green-900">Payment successful!</p>
+                <p className="text-sm text-green-800 mt-0.5">
+                  Your project copy is being prepared. It will appear in your library in a few moments — refresh this page to check.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Acquire Card */}
         <Card className="shadow-lg border-0 bg-card rounded-xl overflow-hidden">
           <CardContent className="p-6">
@@ -139,6 +193,16 @@ export default function MarketplaceListing() {
                     <ExternalLink className="w-4 h-4 mr-1" /> View Project
                   </Button>
                 </Link>
+              </div>
+            ) : paymentPending ? (
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
+                  <Loader2 className="w-5 h-5 text-amber-600 animate-spin" />
+                </div>
+                <div>
+                  <p className="font-semibold text-foreground">Payment processing</p>
+                  <p className="text-sm text-muted-foreground">Your project copy will appear in your library shortly.</p>
+                </div>
               </div>
             ) : alreadyAcquired ? (
               <div className="flex items-center gap-3">
@@ -159,26 +223,26 @@ export default function MarketplaceListing() {
               </div>
             ) : listing.priceCents > 0 ? (
               <div className="space-y-4">
-                <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-xl">
-                  <CreditCard className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
+                <div className="flex items-start gap-3 p-4 bg-muted/50 rounded-xl">
+                  <CreditCard className="w-5 h-5 text-muted-foreground mt-0.5 flex-shrink-0" />
                   <div>
-                    <p className="font-medium text-amber-900 text-sm">Payment processing coming soon</p>
-                    <p className="text-amber-800 text-xs mt-1">
-                      Paid projects will require a card on file. You can reserve your copy now and will be charged once payment is enabled.
+                    <p className="font-medium text-foreground text-sm">Secure checkout via Stripe</p>
+                    <p className="text-muted-foreground text-xs mt-1">
+                      You'll be taken to Stripe to complete your payment. You'll get a clean copy of this project instantly after checkout.
                     </p>
                   </div>
                 </div>
                 <Button
                   className="w-full h-12 text-base"
-                  onClick={() => acquireMutation.mutate({ id: listingId })}
-                  disabled={acquireMutation.isPending}
+                  onClick={() => checkoutMutation.mutate({ id: listingId })}
+                  disabled={checkoutMutation.isPending}
                 >
-                  {acquireMutation.isPending ? (
+                  {checkoutMutation.isPending ? (
                     <Loader2 className="w-5 h-5 mr-2 animate-spin" />
                   ) : (
-                    <DollarSign className="w-5 h-5 mr-2" />
+                    <CreditCard className="w-5 h-5 mr-2" />
                   )}
-                  Reserve for {formatPrice(listing.priceCents)}
+                  Get for {formatPrice(listing.priceCents)}
                 </Button>
               </div>
             ) : (

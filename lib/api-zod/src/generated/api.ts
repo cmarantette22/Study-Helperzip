@@ -1021,6 +1021,17 @@ export const UpdateListingResponse = zod.object({
 });
 
 /**
+ * @summary Create a Stripe Checkout session for a paid marketplace listing
+ */
+export const CreateMarketplaceCheckoutSessionParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const CreateMarketplaceCheckoutSessionResponse = zod.object({
+  url: zod.string(),
+});
+
+/**
  * @summary Acquire (purchase/copy) a marketplace listing
  */
 export const AcquireListingParams = zod.object({

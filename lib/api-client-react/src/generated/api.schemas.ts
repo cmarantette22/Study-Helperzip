@@ -377,6 +377,10 @@ export interface UpdateListingBody {
   description?: string;
 }
 
+export interface MarketplaceCheckoutResult {
+  url: string;
+}
+
 export interface AcquireResult {
   paymentRequired?: boolean;
   copiedProjectId?: number | null;

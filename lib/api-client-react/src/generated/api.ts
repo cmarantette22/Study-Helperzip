@@ -40,6 +40,7 @@ import type {
   HealthStatus,
   ListProjectQuestionsParams,
   LoginBody,
+  MarketplaceCheckoutResult,
   MarketplaceListing,
   MarketplacePurchaseSummary,
   OutlineSection,
@@ -3540,6 +3541,95 @@ export const useUpdateListing = <
   TContext
 > => {
   return useMutation(getUpdateListingMutationOptions(options));
+};
+
+/**
+ * @summary Create a Stripe Checkout session for a paid marketplace listing
+ */
+export const getCreateMarketplaceCheckoutSessionUrl = (id: number) => {
+  return `/api/marketplace/listings/${id}/checkout`;
+};
+
+export const createMarketplaceCheckoutSession = async (
+  id: number,
+  options?: RequestInit,
+): Promise<MarketplaceCheckoutResult> => {
+  return customFetch<MarketplaceCheckoutResult>(
+    getCreateMarketplaceCheckoutSessionUrl(id),
+    {
+      ...options,
+      method: "POST",
+    },
+  );
+};
+
+export const getCreateMarketplaceCheckoutSessionMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createMarketplaceCheckoutSession>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createMarketplaceCheckoutSession>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["createMarketplaceCheckoutSession"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createMarketplaceCheckoutSession>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return createMarketplaceCheckoutSession(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateMarketplaceCheckoutSessionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createMarketplaceCheckoutSession>>
+>;
+
+export type CreateMarketplaceCheckoutSessionMutationError = ErrorType<void>;
+
+/**
+ * @summary Create a Stripe Checkout session for a paid marketplace listing
+ */
+export const useCreateMarketplaceCheckoutSession = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createMarketplaceCheckoutSession>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createMarketplaceCheckoutSession>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(
+    getCreateMarketplaceCheckoutSessionMutationOptions(options),
+  );
 };
 
 /**

@@ -11,6 +11,7 @@ import {
 import { eq, and, count, desc } from "drizzle-orm";
 import type { InferSelectModel, InferInsertModel } from "drizzle-orm";
 import { requireAuth } from "../../middlewares/requireAuth";
+import { getUncachableStripeClient } from "../../stripeClient";
 import { z } from "zod";
 
 type DbProject = InferSelectModel<typeof projectsTable>;
@@ -418,6 +419,122 @@ router.put("/marketplace/listings/:id", async (req, res) => {
   res.json(
     buildListingResponse(updated, project, seller ?? null, holderResult?.value ?? 0)
   );
+});
+
+router.post("/marketplace/listings/:id/checkout", async (req, res) => {
+  const user = (req as unknown as AuthedRequest).currentUser;
+  const id = parseInt(req.params.id, 10);
+
+  const [listing] = await db
+    .select()
+    .from(marketplaceListingsTable)
+    .where(eq(marketplaceListingsTable.id, id));
+
+  if (!listing || !listing.isActive) {
+    res.status(404).json({ error: "Listing not found or not available" });
+    return;
+  }
+
+  if (listing.priceCents === 0) {
+    res.status(400).json({ error: "This listing is free. Use the acquire endpoint instead." });
+    return;
+  }
+
+  if (listing.sellerUserId === user.id) {
+    res.status(400).json({ error: "You cannot purchase your own listing." });
+    return;
+  }
+
+  const [existing] = await db
+    .select()
+    .from(marketplacePurchasesTable)
+    .where(
+      and(
+        eq(marketplacePurchasesTable.listingId, id),
+        eq(marketplacePurchasesTable.buyerUserId, user.id)
+      )
+    );
+
+  if (existing?.copiedProjectId) {
+    res.status(400).json({ error: "You have already purchased this listing.", copiedProjectId: existing.copiedProjectId });
+    return;
+  }
+
+  const [seller] = await db
+    .select({ subscriptionStatus: usersTable.subscriptionStatus, role: usersTable.role })
+    .from(usersTable)
+    .where(eq(usersTable.id, listing.sellerUserId));
+
+  if (!seller || (seller.subscriptionStatus !== "active" && seller.role !== "admin")) {
+    res.status(400).json({ error: "This listing is no longer available." });
+    return;
+  }
+
+  const [sourceProject] = await db
+    .select()
+    .from(projectsTable)
+    .where(eq(projectsTable.id, listing.projectId));
+
+  if (!sourceProject) {
+    res.status(404).json({ error: "Source project not found" });
+    return;
+  }
+
+  // Ensure a pending purchase record exists so the listing shows "payment processing"
+  // and prevents the user from initiating a second checkout session.
+  let pendingPurchase = existing;
+  if (!pendingPurchase) {
+    const commissionCents = Math.round(listing.priceCents * COMMISSION_RATE);
+    [pendingPurchase] = await db
+      .insert(marketplacePurchasesTable)
+      .values({
+        listingId: listing.id,
+        buyerUserId: user.id,
+        copiedProjectId: null,
+        purchasePriceCents: listing.priceCents,
+        commissionCents,
+        stripePaymentIntentId: null,
+      })
+      .returning();
+  }
+
+  try {
+    const stripe = await getUncachableStripeClient();
+    const baseUrl = `https://${process.env.REPLIT_DOMAINS?.split(",")[0]}`;
+
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ["card"],
+      line_items: [
+        {
+          price_data: {
+            currency: "usd",
+            unit_amount: listing.priceCents,
+            product_data: {
+              name: sourceProject.name,
+              description: sourceProject.description
+                ? sourceProject.description.slice(0, 255)
+                : `Marketplace study project`,
+            },
+          },
+          quantity: 1,
+        },
+      ],
+      mode: "payment",
+      success_url: `${baseUrl}/marketplace/${id}?checkout=success`,
+      cancel_url: `${baseUrl}/marketplace/${id}?checkout=canceled`,
+      metadata: {
+        type: "marketplace",
+        listingId: String(listing.id),
+        buyerUserId: String(user.id),
+        purchaseId: String(pendingPurchase.id),
+      },
+    });
+
+    res.json({ url: session.url });
+  } catch (err: any) {
+    req.log.error({ err }, "Failed to create marketplace checkout session");
+    res.status(500).json({ error: "Failed to create checkout session" });
+  }
 });
 
 router.post("/marketplace/listings/:id/acquire", async (req, res) => {

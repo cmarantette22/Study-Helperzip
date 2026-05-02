@@ -39,6 +39,7 @@ export * from "./healthStatus";
 export * from "./listProjectQuestionsFilter";
 export * from "./listProjectQuestionsParams";
 export * from "./loginBody";
+export * from "./marketplaceCheckoutResult";
 export * from "./marketplaceListing";
 export * from "./marketplaceProjectSnapshot";
 export * from "./marketplacePurchaseRecord";
