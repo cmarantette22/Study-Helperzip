@@ -9,7 +9,7 @@ import {
   usersTable,
 } from "@workspace/db/schema";
 import { eq, and, count, desc } from "drizzle-orm";
-import type { InferSelectModel } from "drizzle-orm";
+import type { InferSelectModel, InferInsertModel } from "drizzle-orm";
 import { requireAuth } from "../../middlewares/requireAuth";
 import { z } from "zod";
 
@@ -297,7 +297,8 @@ router.post("/marketplace/listings", async (req, res) => {
   }
 
   // Apply any metadata provided in the listing request to the project
-  const metadataUpdate: Record<string, any> = {};
+  type ProjectUpdate = Partial<InferInsertModel<typeof projectsTable>>;
+  const metadataUpdate: ProjectUpdate = {};
   if (body.course !== undefined) metadataUpdate.course = body.course;
   if (body.term !== undefined) metadataUpdate.term = body.term;
   if (body.year !== undefined) metadataUpdate.year = body.year;
@@ -386,13 +387,18 @@ router.put("/marketplace/listings/:id", async (req, res) => {
     .from(projectsTable)
     .where(eq(projectsTable.id, updated.projectId));
 
+  const [seller] = await db
+    .select({ handle: usersTable.handle, name: usersTable.name })
+    .from(usersTable)
+    .where(eq(usersTable.id, updated.sellerUserId));
+
   const [holderResult] = await db
     .select({ value: count() })
     .from(marketplacePurchasesTable)
     .where(eq(marketplacePurchasesTable.listingId, updated.id));
 
   res.json(
-    buildListingResponse(updated, project, { handle: user.handle, name: user.name }, holderResult?.value ?? 0)
+    buildListingResponse(updated, project, seller ?? null, holderResult?.value ?? 0)
   );
 });
 
