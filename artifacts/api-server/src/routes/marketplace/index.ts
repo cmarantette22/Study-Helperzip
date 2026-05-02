@@ -537,6 +537,37 @@ router.post("/marketplace/listings/:id/checkout", async (req, res) => {
   }
 });
 
+router.delete("/marketplace/purchases/pending/:listingId", async (req, res) => {
+  const user = (req as unknown as AuthedRequest).currentUser;
+  const listingId = parseInt(req.params.listingId, 10);
+
+  const [pending] = await db
+    .select()
+    .from(marketplacePurchasesTable)
+    .where(
+      and(
+        eq(marketplacePurchasesTable.listingId, listingId),
+        eq(marketplacePurchasesTable.buyerUserId, user.id)
+      )
+    );
+
+  if (!pending) {
+    res.status(404).json({ error: "No pending purchase found" });
+    return;
+  }
+
+  if (pending.copiedProjectId !== null) {
+    res.status(400).json({ error: "Purchase is already completed and cannot be canceled" });
+    return;
+  }
+
+  await db
+    .delete(marketplacePurchasesTable)
+    .where(eq(marketplacePurchasesTable.id, pending.id));
+
+  res.json({ success: true });
+});
+
 router.post("/marketplace/listings/:id/acquire", async (req, res) => {
   const user = (req as unknown as AuthedRequest).currentUser;
   const id = parseInt(req.params.id, 10);

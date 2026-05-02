@@ -442,6 +442,10 @@ export type PushListingUpdate200 = {
   notifiedCount: number;
 };
 
+export type CancelPendingPurchase200 = {
+  success: boolean;
+};
+
 export type AcceptListingUpdate200 = {
   success: boolean;
   questionsUpdated?: number;

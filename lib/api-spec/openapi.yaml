@@ -898,6 +898,31 @@ paths:
                     type: integer
                 required:
                   - notifiedCount
+  /marketplace/purchases/pending/{listingId}:
+    delete:
+      operationId: cancelPendingPurchase
+      tags: [marketplace]
+      summary: Cancel a pending (unconfirmed) marketplace purchase for a listing
+      parameters:
+        - name: listingId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Pending purchase deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                required:
+                  - success
+        "404":
+          description: No pending purchase found
   /marketplace/purchases/{id}/accept-update:
     post:
       operationId: acceptListingUpdate

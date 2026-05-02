@@ -29,6 +29,7 @@ app.use(
   }),
 );
 
+app.set("trust proxy", 1);
 app.use(cors({ origin: true, credentials: true }));
 
 app.post(
@@ -65,7 +66,7 @@ app.use(
     resave: false,
     saveUninitialized: false,
     cookie: {
-      secure: false,
+      secure: process.env.NODE_ENV === "production",
       httpOnly: true,
       maxAge: 30 * 24 * 60 * 60 * 1000,
       sameSite: "lax",

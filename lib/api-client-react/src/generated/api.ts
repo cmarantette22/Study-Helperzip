@@ -23,6 +23,7 @@ import type {
   AdminUser,
   AdminUserWithPassword,
   AuthUser,
+  CancelPendingPurchase200,
   ChangePasswordBody,
   ChatMessageBody,
   ChatResponse,
@@ -3798,6 +3799,93 @@ export const usePushListingUpdate = <
   TContext
 > => {
   return useMutation(getPushListingUpdateMutationOptions(options));
+};
+
+/**
+ * @summary Cancel a pending (unconfirmed) marketplace purchase for a listing
+ */
+export const getCancelPendingPurchaseUrl = (listingId: number) => {
+  return `/api/marketplace/purchases/pending/${listingId}`;
+};
+
+export const cancelPendingPurchase = async (
+  listingId: number,
+  options?: RequestInit,
+): Promise<CancelPendingPurchase200> => {
+  return customFetch<CancelPendingPurchase200>(
+    getCancelPendingPurchaseUrl(listingId),
+    {
+      ...options,
+      method: "DELETE",
+    },
+  );
+};
+
+export const getCancelPendingPurchaseMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof cancelPendingPurchase>>,
+    TError,
+    { listingId: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof cancelPendingPurchase>>,
+  TError,
+  { listingId: number },
+  TContext
+> => {
+  const mutationKey = ["cancelPendingPurchase"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof cancelPendingPurchase>>,
+    { listingId: number }
+  > = (props) => {
+    const { listingId } = props ?? {};
+
+    return cancelPendingPurchase(listingId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CancelPendingPurchaseMutationResult = NonNullable<
+  Awaited<ReturnType<typeof cancelPendingPurchase>>
+>;
+
+export type CancelPendingPurchaseMutationError = ErrorType<void>;
+
+/**
+ * @summary Cancel a pending (unconfirmed) marketplace purchase for a listing
+ */
+export const useCancelPendingPurchase = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof cancelPendingPurchase>>,
+    TError,
+    { listingId: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof cancelPendingPurchase>>,
+  TError,
+  { listingId: number },
+  TContext
+> => {
+  return useMutation(getCancelPendingPurchaseMutationOptions(options));
 };
 
 /**

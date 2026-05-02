@@ -1059,6 +1059,17 @@ export const PushListingUpdateResponse = zod.object({
 });
 
 /**
+ * @summary Cancel a pending (unconfirmed) marketplace purchase for a listing
+ */
+export const CancelPendingPurchaseParams = zod.object({
+  listingId: zod.coerce.number(),
+});
+
+export const CancelPendingPurchaseResponse = zod.object({
+  success: zod.boolean(),
+});
+
+/**
  * @summary Accept a pending update for a purchased project
  */
 export const AcceptListingUpdateParams = zod.object({

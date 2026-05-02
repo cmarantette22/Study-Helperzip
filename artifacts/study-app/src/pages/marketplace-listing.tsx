@@ -4,6 +4,7 @@ import {
   useGetMarketplaceListing,
   useAcquireListing,
   useCreateMarketplaceCheckoutSession,
+  useCancelPendingPurchase,
   getListMarketplaceListingsQueryKey,
   getGetMarketplaceListingQueryKey,
   getGetMyPurchasesQueryKey,
@@ -15,7 +16,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
   Loader2, ArrowLeft, BookOpen, GraduationCap, Calendar, Tag, Users,
-  CreditCard, CheckCircle2, ExternalLink, AlertCircle, PartyPopper,
+  CreditCard, CheckCircle2, ExternalLink, AlertCircle, PartyPopper, RefreshCw,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -69,6 +70,19 @@ export default function MarketplaceListing() {
       },
       onError: (err: any) => {
         const msg = err?.response?.data?.error || err?.message || "Failed to start checkout";
+        toast({ title: msg, variant: "destructive" });
+      },
+    },
+  });
+
+  const cancelPendingMutation = useCancelPendingPurchase({
+    mutation: {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: getGetMarketplaceListingQueryKey(listingId) });
+        queryClient.invalidateQueries({ queryKey: getGetMyPurchasesQueryKey() });
+      },
+      onError: (err: any) => {
+        const msg = err?.response?.data?.error || err?.message || "Failed to cancel";
         toast({ title: msg, variant: "destructive" });
       },
     },
@@ -195,13 +209,33 @@ export default function MarketplaceListing() {
                 </Link>
               </div>
             ) : paymentPending ? (
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
-                  <Loader2 className="w-5 h-5 text-amber-600 animate-spin" />
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
+                    <Loader2 className="w-5 h-5 text-amber-600 animate-spin" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-foreground">Payment pending</p>
+                    <p className="text-sm text-muted-foreground">
+                      If you completed payment, your project will appear shortly. If you canceled, you can try again.
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="font-semibold text-foreground">Payment processing</p>
-                  <p className="text-sm text-muted-foreground">Your project copy will appear in your library shortly.</p>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => cancelPendingMutation.mutate({ listingId })}
+                    disabled={cancelPendingMutation.isPending}
+                  >
+                    {cancelPendingMutation.isPending ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <RefreshCw className="w-4 h-4 mr-2" />
+                    )}
+                    Cancel & Try Again
+                  </Button>
                 </div>
               </div>
             ) : alreadyAcquired ? (
