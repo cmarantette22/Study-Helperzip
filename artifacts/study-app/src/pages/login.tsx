@@ -71,12 +71,17 @@ export default function Login() {
               {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
               Sign In
             </Button>
-            <p className="text-center text-sm text-slate-500 pt-2">
-              Don't have an account?{" "}
-              <button type="button" onClick={() => navigate("/signup")} className="text-blue-600 hover:underline font-medium">
-                Sign up
+            <div className="flex flex-col items-center gap-2 pt-2">
+              <p className="text-center text-sm text-slate-500">
+                Don't have an account?{" "}
+                <button type="button" onClick={() => navigate("/signup")} className="text-blue-600 hover:underline font-medium">
+                  Sign up
+                </button>
+              </p>
+              <button type="button" onClick={() => navigate("/forgot-password")} className="text-sm text-slate-400 hover:text-slate-600 hover:underline">
+                Forgot your password?
               </button>
-            </p>
+            </div>
           </form>
         </CardContent>
       </Card>

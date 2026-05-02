@@ -10,6 +10,8 @@ import QuestionDetail from "@/pages/question-detail";
 import OutlineSectionDetail from "@/pages/outline-section-detail";
 import Login from "@/pages/login";
 import Signup from "@/pages/signup";
+import ForgotPassword from "@/pages/forgot-password";
+import ResetPassword from "@/pages/reset-password";
 import ChangePassword from "@/pages/change-password";
 import AdminUsers from "@/pages/admin-users";
 import ManageAccount from "@/pages/manage-account";
@@ -169,6 +171,8 @@ function AppRoutes() {
     return (
       <Switch>
         <Route path="/signup" component={Signup} />
+        <Route path="/forgot-password" component={ForgotPassword} />
+        <Route path="/reset-password" component={ResetPassword} />
         <Route component={Login} />
       </Switch>
     );
